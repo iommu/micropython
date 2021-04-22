@@ -235,7 +235,7 @@ STATIC void pyb_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_ki
     pyb_pin_obj_t *self = self_in;
 
     // pin name
-    mp_printf(print, "Pin(%u)", self->phys_port);
+    mp_printf(print, "Pin('%s'), GPIO%u", self->pin_name, self->phys_port);
 }
 
 // pin.init(mode, pull=None, *, value)
@@ -312,19 +312,15 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
     size_t len;
     const char *pin_name;
     pin_name = mp_obj_str_get_data(args[0], &len);
-    int wanted_pin = 99;
+    pyb_pin_obj_t *pin = NULL;
     for (int i = 0; i < MP_ARRAY_SIZE(pyb_pin_obj); i++) {
         if (len == strlen(pyb_pin_obj[i].pin_name) &&
             strncmp(pin_name, pyb_pin_obj[i].pin_name, len) == 0) {
-                wanted_pin = i;
+                pin = (pyb_pin_obj_t *)&pyb_pin_obj[i];
                 break;
         }
     }
-    // int wanted_pin = mp_obj_get_int(args[0]);
-    pyb_pin_obj_t *pin = NULL;
-    if (0 <= wanted_pin && wanted_pin < MP_ARRAY_SIZE(pyb_pin_obj)) {
-        pin = (pyb_pin_obj_t *)&pyb_pin_obj[wanted_pin];
-    }
+
     if (pin == NULL || pin->base.type == NULL) {
         mp_raise_ValueError(MP_ERROR_TEXT("invalid pin"));
     }
