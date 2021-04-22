@@ -63,25 +63,25 @@ STATIC void pin_intr_handler_part1(void *arg);
 STATIC void pin_intr_handler_part2(uint32_t status);
 
 const pyb_pin_obj_t pyb_pin_obj[16 + 1] = {
-    {{&pyb_pin_type}, 0, FUNC_GPIO0, PERIPHS_IO_MUX_GPIO0_U},
-    {{&pyb_pin_type}, 1, FUNC_GPIO1, PERIPHS_IO_MUX_U0TXD_U},
-    {{&pyb_pin_type}, 2, FUNC_GPIO2, PERIPHS_IO_MUX_GPIO2_U},
-    {{&pyb_pin_type}, 3, FUNC_GPIO3, PERIPHS_IO_MUX_U0RXD_U},
-    {{&pyb_pin_type}, 4, FUNC_GPIO4, PERIPHS_IO_MUX_GPIO4_U},
-    {{&pyb_pin_type}, 5, FUNC_GPIO5, PERIPHS_IO_MUX_GPIO5_U},
-    {{NULL}, 0, 0, 0},
-    {{NULL}, 0, 0, 0},
-    {{NULL}, 0, 0, 0},
-    {{&pyb_pin_type}, 9, FUNC_GPIO9, PERIPHS_IO_MUX_SD_DATA2_U},
-    {{&pyb_pin_type}, 10, FUNC_GPIO10, PERIPHS_IO_MUX_SD_DATA3_U},
-    {{NULL}, 0, 0, 0},
-    {{&pyb_pin_type}, 12, FUNC_GPIO12, PERIPHS_IO_MUX_MTDI_U},
-    {{&pyb_pin_type}, 13, FUNC_GPIO13, PERIPHS_IO_MUX_MTCK_U},
-    {{&pyb_pin_type}, 14, FUNC_GPIO14, PERIPHS_IO_MUX_MTMS_U},
-    {{&pyb_pin_type}, 15, FUNC_GPIO15, PERIPHS_IO_MUX_MTDO_U},
+    {{&pyb_pin_type}, 0, FUNC_GPIO0, PERIPHS_IO_MUX_GPIO0_U, "D3"},
+    {{&pyb_pin_type}, 1, FUNC_GPIO1, PERIPHS_IO_MUX_U0TXD_U, "TX"},
+    {{&pyb_pin_type}, 2, FUNC_GPIO2, PERIPHS_IO_MUX_GPIO2_U, "D4"},
+    {{&pyb_pin_type}, 3, FUNC_GPIO3, PERIPHS_IO_MUX_U0RXD_U, "RX"},
+    {{&pyb_pin_type}, 4, FUNC_GPIO4, PERIPHS_IO_MUX_GPIO4_U, "D2"},
+    {{&pyb_pin_type}, 5, FUNC_GPIO5, PERIPHS_IO_MUX_GPIO5_U, "D1"},
+    {{NULL}, 0, 0, 0, ""},
+    {{NULL}, 0, 0, 0, ""},
+    {{NULL}, 0, 0, 0, ""},
+    {{&pyb_pin_type}, 9, FUNC_GPIO9, PERIPHS_IO_MUX_SD_DATA2_U, ""},
+    {{&pyb_pin_type}, 10, FUNC_GPIO10, PERIPHS_IO_MUX_SD_DATA3_U, ""},
+    {{NULL}, 0, 0, 0, ""},
+    {{&pyb_pin_type}, 12, FUNC_GPIO12, PERIPHS_IO_MUX_MTDI_U, "D6"},
+    {{&pyb_pin_type}, 13, FUNC_GPIO13, PERIPHS_IO_MUX_MTCK_U, "D7"},
+    {{&pyb_pin_type}, 14, FUNC_GPIO14, PERIPHS_IO_MUX_MTMS_U, "D5"},
+    {{&pyb_pin_type}, 15, FUNC_GPIO15, PERIPHS_IO_MUX_MTDO_U, "D8"},
     // GPIO16 is special, belongs to different register set, and
     // otherwise handled specially.
-    {{&pyb_pin_type}, 16, -1, -1},
+    {{&pyb_pin_type}, 16, -1, -1, "D0"},
 };
 
 STATIC uint8_t pin_mode[16 + 1];
@@ -309,7 +309,18 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
 
     // get the wanted pin object
-    int wanted_pin = mp_obj_get_int(args[0]);
+    size_t len;
+    const char *pin_name;
+    pin_name = mp_obj_str_get_data(args[0], &len);
+    int wanted_pin = 99;
+    for (int i = 0; i < MP_ARRAY_SIZE(pyb_pin_obj); i++) {
+        if (len == strlen(pyb_pin_obj[i].pin_name) &&
+            strncmp(pin_name, pyb_pin_obj[i].pin_name, len) == 0) {
+                wanted_pin = i;
+                break;
+        }
+    }
+    // int wanted_pin = mp_obj_get_int(args[0]);
     pyb_pin_obj_t *pin = NULL;
     if (0 <= wanted_pin && wanted_pin < MP_ARRAY_SIZE(pyb_pin_obj)) {
         pin = (pyb_pin_obj_t *)&pyb_pin_obj[wanted_pin];

@@ -18,6 +18,7 @@ typedef struct _pyb_pin_obj_t {
     uint16_t phys_port;
     uint16_t func;
     uint32_t periph;
+    char *pin_name;
 } pyb_pin_obj_t;
 
 const pyb_pin_obj_t pyb_pin_obj[16 + 1];
