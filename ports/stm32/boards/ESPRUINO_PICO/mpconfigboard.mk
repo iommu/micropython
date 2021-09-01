@@ -6,4 +6,4 @@ TEXT0_ADDR = 0x08000000
 TEXT1_ADDR = 0x08020000
 
 # Don't include default frozen modules because MCU is tight on flash space
-FROZEN_MANIFEST ?=
+FROZEN_MANIFEST ?=  $(BOARD_DIR)/manifest.py
