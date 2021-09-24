@@ -47,6 +47,8 @@ uint32_t trng_random_u32(void);
 #define MICROPY_OPT_LOAD_ATTR_FAST_PATH     (1)
 #define MICROPY_OPT_MAP_LOOKUP_CACHE        (1)
 
+// Compiler configuration
+
 // Python internal features
 #define MICROPY_TRACKED_ALLOC               (MICROPY_SSL_MBEDTLS)
 #define MICROPY_READER_VFS                  (1)

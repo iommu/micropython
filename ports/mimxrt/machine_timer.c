@@ -54,7 +54,7 @@ static pit_config_t pit_config;
 
 // This is the interrupt handler
 // To tell which channel fired one has to poll the flags
-void alarm_callback(void) {
+__attribute__((section(".ram_functions"))) void alarm_callback(void) {
     for (uint8_t index = 0; index < MICROPY_HW_PIT_NUM_CHANNELS; index++) {
         uint32_t flag;
         machine_timer_obj_t *self = MP_STATE_PORT(timer_table)[index];
