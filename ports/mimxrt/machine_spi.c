@@ -31,12 +31,19 @@
 #include "extmod/machine_spi.h"
 #include "modmachine.h"
 #include CLOCK_CONFIG_H
+#include "dma_manager.h"
 
-#include "fsl_cache.h"
 #include "fsl_dmamux.h"
 #include "fsl_iomuxc.h"
 #include "fsl_lpspi.h"
 #include "fsl_lpspi_edma.h"
+
+#if defined(MIMXRT117x_SERIES)
+#include "cm7/fsl_cache.h"
+#else
+#include "fsl_cache.h"
+#endif
+
 
 #define DEFAULT_SPI_BAUDRATE    (1000000)
 #define DEFAULT_SPI_POLARITY    (0)
@@ -45,6 +52,17 @@
 #define DEFAULT_SPI_FIRSTBIT    (kLPSPI_MsbFirst)
 #define DEFAULT_SPI_DRIVE       (6)
 
+<<<<<<< HEAD
+=======
+#define CLOCK_DIVIDER           (1)
+
+#if defined(MIMXRT117x_SERIES)
+#define LPSPI_DMAMUX            DMAMUX0
+#else
+#define LPSPI_DMAMUX            DMAMUX
+#endif
+
+>>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
 #define MICROPY_HW_SPI_NUM MP_ARRAY_SIZE(spi_index_table)
 
 #define SCK (iomux_table[index])
@@ -134,6 +152,11 @@ mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
         { MP_QSTR_cs,       MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
     };
 
+<<<<<<< HEAD
+=======
+    // static bool clk_init = true;
+
+>>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
     // Parse the arguments.
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -156,6 +179,15 @@ mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
         drive = DEFAULT_SPI_DRIVE;
     }
 
+<<<<<<< HEAD
+=======
+    // if (clk_init) {
+    //     clk_init = false;
+    //     /*Set clock source for LPSPI*/
+    //     CLOCK_SetMux(kCLOCK_LpspiMux, 1);  // Clock source is kCLOCK_Usb1PllPfd1Clk
+    //     CLOCK_SetDiv(kCLOCK_LpspiDiv, CLOCK_DIVIDER);
+    // }
+>>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
     LPSPI_Reset(self->spi_inst);
     LPSPI_Enable(self->spi_inst, false);  // Disable first before new settings are applies
 
@@ -224,10 +256,97 @@ STATIC void machine_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_obj
     self->master_config->pcsToSckDelayInNanoSec = self->master_config->betweenTransferDelayInNanoSec;
     LPSPI_Enable(self->spi_inst, false);  // Disable first before new settings are applies
     LPSPI_MasterInit(self->spi_inst, self->master_config, BOARD_BOOTCLOCKRUN_LPSPI_CLK_ROOT);
+<<<<<<< HEAD
+=======
+}
+
+void LPSPI_EDMAMasterCallback(LPSPI_Type *base, lpspi_master_edma_handle_t *handle, status_t status, void *self_in) {
+    machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
+    self->transfer_busy = false;
+>>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
 }
 
 STATIC void machine_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8_t *src, uint8_t *dest) {
     machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
+<<<<<<< HEAD
+=======
+    // Use DMA for large transfers if channels are available
+    const size_t dma_min_size_threshold = FSL_FEATURE_LPSPI_FIFO_SIZEn(0);  // The Macro argument is ignored
+
+    int chan_tx = -1;
+    int chan_rx = -1;
+    if (len >= dma_min_size_threshold) {
+        // Use two DMA channels to service the two FIFOs
+        chan_rx = allocate_dma_channel();
+        chan_tx = allocate_dma_channel();
+    }
+    bool use_dma = chan_rx >= 0 && chan_tx >= 0;
+
+    if (use_dma) {
+        /* DMA MUX init*/
+
+        DMAMUX_Init(LPSPI_DMAMUX);
+
+        DMAMUX_SetSource(LPSPI_DMAMUX, chan_rx, dma_req_src_rx[self->spi_hw_id]); // ## SPIn source
+        DMAMUX_EnableChannel(LPSPI_DMAMUX, chan_rx);
+
+        DMAMUX_SetSource(LPSPI_DMAMUX, chan_tx, dma_req_src_tx[self->spi_hw_id]);
+        DMAMUX_EnableChannel(LPSPI_DMAMUX, chan_tx);
+
+        dma_init();
+
+        lpspi_master_edma_handle_t g_master_edma_handle;
+        edma_handle_t lpspiEdmaMasterRxRegToRxDataHandle;
+        edma_handle_t lpspiEdmaMasterTxDataToTxRegHandle;
+
+        // Set up lpspi EDMA master
+        EDMA_CreateHandle(&(lpspiEdmaMasterRxRegToRxDataHandle), DMA0, chan_rx);
+        EDMA_CreateHandle(&(lpspiEdmaMasterTxDataToTxRegHandle), DMA0, chan_tx);
+        LPSPI_MasterTransferCreateHandleEDMA(self->spi_inst, &g_master_edma_handle, LPSPI_EDMAMasterCallback, self,
+            &lpspiEdmaMasterRxRegToRxDataHandle,
+            &lpspiEdmaMasterTxDataToTxRegHandle);
+
+        // Wait a short while for a previous transfer to finish, but not forever
+        for (volatile int j = 0; (j < 5000) && ((LPSPI_GetStatusFlags(self->spi_inst) & kLPSPI_ModuleBusyFlag) != 0); j++) {}
+
+        // Start master transfer
+        lpspi_transfer_t masterXfer;
+        masterXfer.txData = (uint8_t *)src;
+        masterXfer.rxData = (uint8_t *)dest;
+        masterXfer.dataSize = len;
+        masterXfer.configFlags = (self->master_config->whichPcs << LPSPI_MASTER_PCS_SHIFT) | kLPSPI_MasterPcsContinuous | kLPSPI_MasterByteSwap;
+
+        // Reconfigure the TCR, required after switch between DMA vs. non-DMA
+        LPSPI_Enable(self->spi_inst, false);  // Disable first before new settings are applied
+        self->spi_inst->TCR = LPSPI_TCR_CPOL(self->master_config->cpol) | LPSPI_TCR_CPHA(self->master_config->cpha) |
+            LPSPI_TCR_LSBF(self->master_config->direction) | LPSPI_TCR_FRAMESZ(self->master_config->bitsPerFrame - 1) |
+            (self->spi_inst->TCR & LPSPI_TCR_PRESCALE_MASK) | LPSPI_TCR_PCS(self->master_config->whichPcs);
+        LPSPI_Enable(self->spi_inst, true);
+
+        self->transfer_busy = true;
+        if (dest) {
+            L1CACHE_DisableDCache();
+        } else if (src) {
+            DCACHE_CleanByRange((uint32_t)src, len);
+        }
+        if (LPSPI_MasterTransferEDMA(self->spi_inst, &g_master_edma_handle, &masterXfer) != kStatus_Success) {
+            L1CACHE_EnableDCache();
+            mp_raise_OSError(EIO);
+        } else {
+            while (self->transfer_busy) {
+                MICROPY_EVENT_POLL_HOOK
+            }
+            L1CACHE_EnableDCache();
+        }
+    }
+    // Release DMA channels, even if never allocated.
+    if (chan_rx >= 0) {
+        free_dma_channel(chan_rx);
+    }
+    if (chan_tx >= 0) {
+        free_dma_channel(chan_tx);
+    }
+>>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
 
     // Wait a short while for the previous transfer to finish, but not forever
     for (volatile int j = 0; (j < 5000) && ((self->spi_inst->SR & kLPSPI_ModuleBusyFlag) != 0); j++) {}

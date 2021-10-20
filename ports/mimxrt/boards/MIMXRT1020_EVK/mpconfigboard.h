@@ -158,8 +158,8 @@
 #define ENET_PHY_OPS        phyksz8081_ops
 
 // Etherner PIN definitions
-#define ENET_RESET_PIN      pin_GPIO_AD_B0_04
-#define ENET_INT_PIN        pin_GPIO_AD_B1_06
+#define ENET_RESET_PIN      &pin_GPIO_AD_B0_04
+#define ENET_INT_PIN        &pin_GPIO_AD_B1_06
 
 #define IOMUX_TABLE_ENET \
     { IOMUXC_GPIO_AD_B0_08_ENET_REF_CLK1, 1, 0xB0E9u }, \

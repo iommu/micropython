@@ -33,6 +33,7 @@
 #include "fsl_lpuart.h"
 #include "fsl_iomuxc.h"
 #include CLOCK_CONFIG_H
+#include "pin.h"
 
 #define DEFAULT_UART_BAUDRATE (115200)
 #define DEFAULT_BUFFER_SIZE (256)
@@ -221,7 +222,11 @@ STATIC mp_obj_t machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args
             self->timeout_char = min_timeout_char;
         }
 
+<<<<<<< HEAD
         LPUART_Init(self->lpuart, &self->config, BOARD_BOOTCLOCKRUN_UART_CLK_ROOT); // ??
+=======
+        LPUART_Init(self->lpuart, &self->config, BOARD_BOOTCLOCKRUN_UART_CLK_ROOT);
+>>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
         LPUART_TransferCreateHandle(self->lpuart, &self->handle,  LPUART_UserCallback, self);
         uint8_t *buffer = m_new(uint8_t, rxbuf_len + 1);
         LPUART_TransferStartRingBuffer(self->lpuart, &self->handle, buffer, rxbuf_len);

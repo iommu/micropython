@@ -113,8 +113,8 @@
 #define ENET_PHY_OPS        phydp83825_ops
 
 // Ethernet PIN definitions
-#define ENET_RESET_PIN      pin_GPIO_B0_14
-#define ENET_INT_PIN        pin_GPIO_B0_15
+#define ENET_RESET_PIN      &pin_GPIO_B0_14
+#define ENET_INT_PIN        &pin_GPIO_B0_15
 
 #define IOMUX_TABLE_ENET \
     { IOMUXC_GPIO_B1_04_ENET_RX_DATA00, 0, 0xB0E9u }, \

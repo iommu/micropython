@@ -29,6 +29,7 @@
 // Board specific definitions
 #include "mpconfigboard.h"
 #include "fsl_common.h"
+#include "lib/nxp_driver/sdk/CMSIS/Include/core_cm7.h"
 
 uint32_t trng_random_u32(void);
 
@@ -44,8 +45,8 @@ uint32_t trng_random_u32(void);
 #define MICROPY_EMIT_INLINE_THUMB           (1)
 
 // Optimisations
-#define MICROPY_OPT_LOAD_ATTR_FAST_PATH     (1)
 #define MICROPY_OPT_MAP_LOOKUP_CACHE        (1)
+#define MICROPY_OPT_LOAD_ATTR_FAST_PATH     (1)
 
 // Python internal features
 #define MICROPY_TRACKED_ALLOC               (MICROPY_SSL_MBEDTLS)
@@ -184,6 +185,10 @@ uint32_t trng_random_u32(void);
 #define MICROPY_PY_PENDSV_REENTER atomic_state = raise_irq_pri(IRQ_PRI_PENDSV);
 #define MICROPY_PY_PENDSV_EXIT    restore_irq_pri(atomic_state);
 
+// #define MICROPY_PY_PENDSV_ENTER   uint32_t atomic_state = disable_irq();
+// #define MICROPY_PY_PENDSV_REENTER atomic_state = disable_irq();
+// #define MICROPY_PY_PENDSV_EXIT    enable_irq(atomic_state);
+
 // Use VfsLfs2's types for fileio/textio
 #define mp_type_fileio mp_type_vfs_lfs2_fileio
 #define mp_type_textio mp_type_vfs_lfs2_textio
@@ -236,6 +241,19 @@ extern const struct _mp_obj_type_t network_lan_type;
     MICROPY_BOARD_NETWORK_INTERFACES \
 
 #define MICROPY_HW_PIT_NUM_CHANNELS 3
+
+#ifndef MICROPY_BOARD_ROOT_POINTERS
+#define MICROPY_BOARD_ROOT_POINTERS
+#endif
+
+#define MICROPY_PORT_ROOT_POINTERS \
+    const char *readline_hist[32]; \
+    struct _machine_timer_obj_t *timer_table[MICROPY_HW_PIT_NUM_CHANNELS]; \
+    void *machine_pin_irq_objects[MICROPY_HW_NUM_PIN_IRQS]; \
+    /* list of registered NICs */ \
+    mp_obj_list_t mod_network_nic_list; \
+    /* root pointers defined by a board */ \
+    MICROPY_BOARD_ROOT_POINTERS \
 
 #define MP_STATE_PORT MP_STATE_VM
 
