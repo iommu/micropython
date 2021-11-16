@@ -1,4 +1,4 @@
-#define MICROPY_HW_BOARD_NAME "Vision RT1062"
+#define MICROPY_HW_BOARD_NAME "VisionSOM RT1062"
 #define MICROPY_HW_MCU_NAME   "MIMXRT1062DVJ6A"
 
 // VisionCB has 4 user LEDs

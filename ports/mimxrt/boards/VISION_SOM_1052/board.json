@@ -1,0 +1,21 @@
+{
+    "deploy": [
+        "deploy.md"
+    ],
+    "docs": "",
+    "features": [
+        "Ethernet",
+        "MicroSD",
+        "MicroUSB",
+        "SDRAM",
+        "LED"
+    ],
+    "images": [
+        "https://somlabs.com/wp-content/uploads/VisionSOM-RT-v_1_1.png"
+    ],
+    "mcu": "mimxrt",
+    "product": "VisionSOM RT1052",
+    "thumbnail": "",
+    "url": "https://somlabs.com/product/visionsom-rt-sls12rx-imx-rt/",
+    "vendor": "SoMLabs"
+}
