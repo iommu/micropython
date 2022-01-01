@@ -84,6 +84,11 @@ enet_buffer_config_t buffConfig[] = {{
                                          &g_txBuffDescrip[0],
                                          &g_rxDataBuff[0][0],
                                          &g_txDataBuff[0][0],
+                                         #if FSL_ENET_DRIVER_VERSION >= 0x020300
+                                         0,
+                                         0,
+                                         NULL
+                                         #endif
                                      }};
 
 static uint8_t hw_addr[6]; // The MAC address field
@@ -119,6 +124,20 @@ static const iomux_table_t iomux_table_enet[] = {
 #define TRACE_ETH_RX (0x0004)
 #define TRACE_ETH_FULL (0x0008)
 
+// Function arguments for the new lib defining ring parameters
+#if FSL_ENET_DRIVER_VERSION >= 0x020300
+#define ENET_RING_ID  , 0
+#define ENET_RING_ID_PTR  , 0, NULL
+#define ENET_RING_ID_FLAG_PTR  , 0, false, NULL
+#endif
+
+// Define dummy function arguments for using the MIMXRT10xx legacy libraries
+// which do not support rińgs
+#ifndef ENET_RING_ID
+#define ENET_RING_ID
+#define ENET_RING_ID_PTR
+#define ENET_RING_ID_FLAG_PTR
+#endif
 
 STATIC void eth_trace(eth_t *self, size_t len, const void *data, unsigned int flags) {
     if (((flags & NETUTILS_TRACE_IS_TX) && (self->trace_flags & TRACE_ETH_TX))
@@ -156,7 +175,15 @@ STATIC void eth_process_frame(eth_t *self, uint8_t *buf, size_t length) {
     }
 }
 
+#if FSL_ENET_DRIVER_VERSION >= 0x020300
+void eth_irq_handler(ENET_Type *base, enet_handle_t *handle, 
+    #if FSL_FEATURE_ENET_QUEUE > 1
+    uint32_t ringId,
+    #endif /* FSL_FEATURE_ENET_QUEUE > 1 */
+    enet_event_t event, enet_frame_info_t *frameInfo, void *userData) {
+#else
 void eth_irq_handler(ENET_Type *base, enet_handle_t *handle, enet_event_t event, void *userData) {
+#endif
     eth_t *self = (eth_t *)userData;
     uint8_t g_rx_frame[ENET_FRAME_MAX_FRAMELEN + 14];
     uint32_t length = 0;
@@ -164,13 +191,13 @@ void eth_irq_handler(ENET_Type *base, enet_handle_t *handle, enet_event_t event,
 
     if (event == kENET_RxEvent) {
         do {
-            status = ENET_GetRxFrameSize(handle, &length);
+            status = ENET_GetRxFrameSize(handle, &length ENET_RING_ID);
             if (status == kStatus_Success) {
                 // Get the data
-                ENET_ReadFrame(base, handle, g_rx_frame, length);
+                ENET_ReadFrame(base, handle, g_rx_frame, length ENET_RING_ID_PTR);
                 eth_process_frame(self, g_rx_frame, length);
             } else if (status == kStatus_ENET_RxFrameError) {
-                ENET_ReadFrame(base, handle, NULL, 0);
+                ENET_ReadFrame(base, handle, NULL, 0 ENET_RING_ID_PTR);
             }
         } while (status != kStatus_ENET_RxFrameEmpty);
     } else {
@@ -319,7 +346,7 @@ STATIC err_t eth_netif_output(struct netif *netif, struct pbuf *p) {
     eth_trace(netif->state, (size_t)-1, p, NETUTILS_TRACE_IS_TX | NETUTILS_TRACE_NEWLINE);
 
     if (p->next == NULL) {
-        status = ENET_SendFrame(ENET, &g_handle, p->payload, p->len);
+        status = ENET_SendFrame(ENET, &g_handle, p->payload, p->len  ENET_RING_ID_FLAG_PTR);
     } else {
         // frame consists of several parts. Copy them together and send them
         size_t length = 0;
@@ -330,7 +357,7 @@ STATIC err_t eth_netif_output(struct netif *netif, struct pbuf *p) {
             length += p->len;
             p = p->next;
         }
-        status = ENET_SendFrame(ENET, &g_handle, tx_frame, length);
+        status = ENET_SendFrame(ENET, &g_handle, tx_frame, length  ENET_RING_ID_FLAG_PTR);
     }
     return status == kStatus_Success ? ERR_OK : ERR_BUF;
 }

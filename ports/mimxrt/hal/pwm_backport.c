@@ -103,6 +103,7 @@ void PWM_SetupPwmx_u16(PWM_Type *base, pwm_submodule_t subModule,
     base->OUTEN |= (1U << subModule);
 }
 
+#if FSL_PWM_DRIVER_VERSION < 0x020201
 void PWM_SetupFaultDisableMap(PWM_Type *base, pwm_submodule_t subModule,
     pwm_channels_t pwmChannel, pwm_fault_channels_t pwm_fault_channels, uint16_t value) {
     uint16_t reg = base->SM[subModule].DISMAP[pwm_fault_channels];
@@ -125,6 +126,7 @@ void PWM_SetupFaultDisableMap(PWM_Type *base, pwm_submodule_t subModule,
     }
     base->SM[subModule].DISMAP[pwm_fault_channels] = reg;
 }
+#endif
 
 #ifdef FSL_FEATURE_SOC_TMR_COUNT
 status_t QTMR_SetupPwm_u16(TMR_Type *base, qtmr_channel_selection_t channel, uint32_t pwmFreqHz,

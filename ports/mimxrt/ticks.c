@@ -36,11 +36,17 @@
 static uint32_t ticks_us64_upper;
 static uint32_t ticks_ms_upper;
 
+uint32_t aaat1, aaat2, aaat3;
+
 void ticks_init(void) {
     ticks_us64_upper = 0;
     ticks_ms_upper = 0;
 
     gpt_config_t config;
+    // CLOCK_EnableClock(kGPT_ClockSource_Periph);
+    // config.clockSource = kGPT_ClockSource_Periph;
+    // config.divider = 27; // XTAL is 27MHz
+    CLOCK_EnableClock(kGPT_ClockSource_Osc);
     config.clockSource = kGPT_ClockSource_Osc;
     config.divider = 24; // XTAL is 24MHz
     config.enableFreeRun = true;
@@ -59,6 +65,12 @@ void ticks_init(void) {
     #ifdef NDEBUG
     mp_hal_ticks_cpu_enable();
     #endif
+    // Check if the timer is running
+    aaat1 = CLOCK_GetFreq(kGPT_ClockSource_Osc);
+    for (int i = 0; i < 10000; i++) {}
+    aaat2 = GPT_GetCurrentTimerCount(GPTx);
+    for (int i = 0; i < 10000; i++) {}
+    aaat3 = GPT_GetCurrentTimerCount(GPTx);
 }
 
 void GPTx_IRQHandler(void) {
