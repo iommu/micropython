@@ -8,10 +8,20 @@
 #define MICROPY_PY_NETWORK              (1)
 #define MICROPY_PY_USOCKET              (1)
 
+// UART 1 config.
+#define MICROPY_HW_UART1_TX             (8)
+#define MICROPY_HW_UART1_RX             (9)
+#define MICROPY_HW_UART1_CTS            (10)
+#define MICROPY_HW_UART1_RTS            (11)
+
 // SPI 1 config.
 #define MICROPY_HW_SPI1_SCK             (14)
 #define MICROPY_HW_SPI1_MOSI            (11)
 #define MICROPY_HW_SPI1_MISO            (8)
+
+// Bluetooth config.
+#define MICROPY_HW_BLE_UART_ID          (1)
+#define MICROPY_HW_BLE_UART_BAUDRATE    (119600)
 
 // WiFi/NINA-W10 config.
 #define MICROPY_HW_WIFI_SPI_ID          (1)
