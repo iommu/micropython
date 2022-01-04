@@ -1,1 +1,4 @@
 # cmake file for Raspberry Pi Pico
+set(MICROPY_PY_NETWORK_NINAW10 1)
+set(MICROPY_HW_ENABLE_DOUBLE_TAP 1)
+# set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
