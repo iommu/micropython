@@ -44,6 +44,11 @@
 const uint8_t dcd_data[] = { 0x00 };
 
 void board_init(void) {
+    // Clean and enable cache
+    SCB_CleanDCache();
+    SCB_EnableDCache();
+    SCB_EnableICache();
+
     // Init clock
     BOARD_BootClockRUN();
     SystemCoreClockUpdate();
