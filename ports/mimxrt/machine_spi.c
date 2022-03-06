@@ -33,17 +33,11 @@
 #include CLOCK_CONFIG_H
 #include "dma_manager.h"
 
+#include "fsl_cache.h"
 #include "fsl_dmamux.h"
 #include "fsl_iomuxc.h"
 #include "fsl_lpspi.h"
 #include "fsl_lpspi_edma.h"
-
-#if defined(MIMXRT117x_SERIES)
-#include "cm7/fsl_cache.h"
-#else
-#include "fsl_cache.h"
-#endif
-
 
 #define DEFAULT_SPI_BAUDRATE    (1000000)
 #define DEFAULT_SPI_POLARITY    (0)
@@ -52,8 +46,6 @@
 #define DEFAULT_SPI_FIRSTBIT    (kLPSPI_MsbFirst)
 #define DEFAULT_SPI_DRIVE       (6)
 
-<<<<<<< HEAD
-=======
 #define CLOCK_DIVIDER           (1)
 
 #if defined(MIMXRT117x_SERIES)
@@ -62,7 +54,6 @@
 #define LPSPI_DMAMUX            DMAMUX
 #endif
 
->>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
 #define MICROPY_HW_SPI_NUM MP_ARRAY_SIZE(spi_index_table)
 
 #define SCK (iomux_table[index])
@@ -153,8 +144,11 @@ mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
     };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     // static bool clk_init = true;
+=======
+>>>>>>> 28511e46b (mimxrt: Set SPI to BlockingTransfer mode only.)
 
 >>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
     // Parse the arguments.
@@ -180,6 +174,7 @@ mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     // if (clk_init) {
     //     clk_init = false;
@@ -188,6 +183,8 @@ mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
     //     CLOCK_SetDiv(kCLOCK_LpspiDiv, CLOCK_DIVIDER);
     // }
 >>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
+=======
+>>>>>>> 28511e46b (mimxrt: Set SPI to BlockingTransfer mode only.)
     LPSPI_Reset(self->spi_inst);
     LPSPI_Enable(self->spi_inst, false);  // Disable first before new settings are applies
 
@@ -260,6 +257,7 @@ STATIC void machine_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_obj
 =======
 }
 
+<<<<<<< HEAD
 void LPSPI_EDMAMasterCallback(LPSPI_Type *base, lpspi_master_edma_handle_t *handle, status_t status, void *self_in) {
     machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
     self->transfer_busy = false;
@@ -351,6 +349,14 @@ STATIC void machine_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8
     // Wait a short while for the previous transfer to finish, but not forever
     for (volatile int j = 0; (j < 5000) && ((self->spi_inst->SR & kLPSPI_ModuleBusyFlag) != 0); j++) {}
 
+=======
+STATIC void machine_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8_t *src, uint8_t *dest) {
+    machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
+
+    // Wait a short while for the previous transfer to finish, but not forever
+    for (volatile int j = 0; (j < 5000) && ((LPSPI_GetStatusFlags(self->spi_inst) & kLPSPI_ModuleBusyFlag) != 0); j++) {}
+    
+>>>>>>> 28511e46b (mimxrt: Set SPI to BlockingTransfer mode only.)
     lpspi_transfer_t masterXfer;
     masterXfer.txData = (uint8_t *)src;
     masterXfer.rxData = (uint8_t *)dest;
