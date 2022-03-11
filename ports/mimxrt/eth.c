@@ -301,7 +301,7 @@ STATIC uint32_t eth_clock_init(int eth_id, bool phy_clock) {
     CLOCK_InitEnetPll(&config);
 
     IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1RefClkMode, false); // Drive ENET_REF_CLK from PAD
-    IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, true);  // Enable output driver
+    IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, phy_clock);  // Enable output driver
 
     return CLOCK_GetFreq(kCLOCK_IpgClk);
 

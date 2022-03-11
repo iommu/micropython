@@ -116,6 +116,8 @@
 
 // Etherner PIN definitions
 // No reset and interrupt pin by intention
+#define ENET_RESET_PIN      NULL
+#define ENET_INT_PIN        NULL
 
 #define IOMUX_TABLE_ENET \
     { IOMUXC_GPIO_B1_04_ENET_RX_DATA00, 0, 0xB0E9u }, \
