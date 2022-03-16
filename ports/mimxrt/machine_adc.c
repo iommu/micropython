@@ -106,6 +106,7 @@ STATIC mp_obj_t machine_adc_read_u16(mp_obj_t self_in) {
     // Set ADC configuration
     LPADC_GetDefaultConvCommandConfig(&adc_config);
     adc_config.channelNumber = self->channel;
+    adc_config.sampleScaleMode = kLPADC_SamplePartScale;
     LPADC_SetConvCommandConfig(self->adc, 1, &adc_config);
 
     // Set Trigger mode
