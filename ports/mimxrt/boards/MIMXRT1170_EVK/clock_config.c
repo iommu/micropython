@@ -80,21 +80,22 @@ void UpdateSemcClock(void) {
 #endif
 #endif
 
-const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN =
-{
+const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
     .postDivider = kCLOCK_PllPostDiv2,            /* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
     .loopDivider = 166,                           /* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
 };
 
-const clock_sys_pll2_config_t sysPll2Config_BOARD_BootClockRUN =
-{
+const clock_sys_pll1_config_t sysPll1Config_BOARD_BootClockRUN = {
+    .pllDiv2En = true,
+};
+
+const clock_sys_pll2_config_t sysPll2Config_BOARD_BootClockRUN = {
     .mfd = 268435455,                             /* Denominator of spread spectrum */
     .ss = NULL,                                   /* Spread spectrum parameter */
     .ssEnable = false,                            /* Enable spread spectrum or not */
 };
 
-const clock_video_pll_config_t videoPllConfig_BOARD_BootClockRUN =
-{
+const clock_video_pll_config_t videoPllConfig_BOARD_BootClockRUN = {
     .loopDivider = 41,                            /* PLL Loop divider, valid range for DIV_SELECT divider value: 27 ~ 54. */
     .postDivider = 0,                             /* Divider after PLL, should only be 1, 2, 4, 8, 16, 32 */
     .numerator = 1,                               /* 30 bit numerator of fractional loop divider, Fout = Fin * ( loopDivider + numerator / denominator ) */
@@ -190,10 +191,11 @@ void BOARD_BootClockRUN(void) {
     CLOCK_InitArmPll(&armPllConfig_BOARD_BootClockRUN);
 
     /* Bypass Sys Pll1. */
-    CLOCK_SetPllBypass(kCLOCK_PllSys1, true);
+    // CLOCK_SetPllBypass(kCLOCK_PllSys1, true);
 
-    /* DeInit Sys Pll1. */
-    CLOCK_DeinitSysPll1();
+    /* Init Sys Pll1 and enable PllSys1_Div2 output */
+    CLOCK_InitSysPll1(&sysPll1Config_BOARD_BootClockRUN);
+
 
     /* Init Sys Pll2. */
     CLOCK_InitSysPll2(&sysPll2Config_BOARD_BootClockRUN);
@@ -250,18 +252,18 @@ void BOARD_BootClockRUN(void) {
     #endif
 
     /* Configure BUS using SYS_PLL3_CLK */
-    #if __CORTEX_M == 7
+    // #if __CORTEX_M == 7
     rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll3Out;
     rootCfg.div = 3;
     CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
-    #endif
+    // #endif
 
     /* Configure BUS_LPSR using SYS_PLL3_CLK */
-    #if __CORTEX_M == 4
+    // #if __CORTEX_M == 4
     rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
     rootCfg.div = 3;
     CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
-    #endif
+    // #endif
 
     /* Configure SEMC using SYS_PLL2_PFD1_CLK */
     #ifndef SKIP_SEMC_INIT
@@ -325,33 +327,33 @@ void BOARD_BootClockRUN(void) {
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Flexio2, &rootCfg);
 
-    /* Configure GPT1 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
+    /* Configure GPT1 using OSC_24M*/
+    rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOsc24MOut;
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
 
-    /* Configure GPT2 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_GPT2_ClockRoot_MuxOscRc48MDiv2;
+    /* Configure GPT2 using OSC_24M */
+    rootCfg.mux = kCLOCK_GPT2_ClockRoot_MuxOsc24MOut;
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Gpt2, &rootCfg);
 
-    /* Configure GPT3 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_GPT3_ClockRoot_MuxOscRc48MDiv2;
+    /* Configure GPT3 using OSC_24M */
+    rootCfg.mux = kCLOCK_GPT3_ClockRoot_MuxOsc24MOut;
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Gpt3, &rootCfg);
 
-    /* Configure GPT4 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_GPT4_ClockRoot_MuxOscRc48MDiv2;
+    /* Configure GPT4 using OSC_24M */
+    rootCfg.mux = kCLOCK_GPT4_ClockRoot_MuxOsc24MOut;
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Gpt4, &rootCfg);
 
-    /* Configure GPT5 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_GPT5_ClockRoot_MuxOscRc48MDiv2;
+    /* Configure GPT5 using OSC_24M */
+    rootCfg.mux = kCLOCK_GPT5_ClockRoot_MuxOsc24MOut;
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Gpt5, &rootCfg);
 
-    /* Configure GPT6 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_GPT6_ClockRoot_MuxOscRc48MDiv2;
+    /* Configure GPT6 using OSC_24M */
+    rootCfg.mux = kCLOCK_GPT6_ClockRoot_MuxOsc24MOut;
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Gpt6, &rootCfg);
 
@@ -382,126 +384,126 @@ void BOARD_BootClockRUN(void) {
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Can3, &rootCfg);
 
-    /* Configure LPUART1 using SYS_PLL2_CLK */
-    rootCfg.mux = kCLOCK_LPUART1_ClockRoot_MuxSysPll2Out;
-    rootCfg.div = 22;
+    /* Configure LPUART1 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART1_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart1, &rootCfg);
 
-    /* Configure LPUART2 using SYS_PLL2_CLK */
-    rootCfg.mux = kCLOCK_LPUART2_ClockRoot_MuxSysPll2Out;
-    rootCfg.div = 22;
+    /* Configure LPUART2 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART2_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart2, &rootCfg);
 
-    /* Configure LPUART3 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART3_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART3 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART3_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart3, &rootCfg);
 
-    /* Configure LPUART4 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART4_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART4 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART4_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart4, &rootCfg);
 
-    /* Configure LPUART5 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART5_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART5 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART5_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart5, &rootCfg);
 
-    /* Configure LPUART6 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART6_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART6 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART6_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart6, &rootCfg);
 
-    /* Configure LPUART7 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART7_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART7 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART7_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart7, &rootCfg);
 
-    /* Configure LPUART8 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART8_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART8 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART8_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart8, &rootCfg);
 
-    /* Configure LPUART9 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART9_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART9 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART9_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart9, &rootCfg);
 
-    /* Configure LPUART10 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART10_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART10 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART10_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart10, &rootCfg);
 
-    /* Configure LPUART11 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART11_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART11 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART11_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart11, &rootCfg);
 
-    /* Configure LPUART12 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_LPUART12_ClockRoot_MuxOscRc48MDiv2;
-    rootCfg.div = 1;
+    /* Configure LPUART12 using SYS_PLL3_PFD3_CLK */
+    rootCfg.mux = kCLOCK_LPUART12_ClockRoot_MuxSysPll2Pfd3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpuart12, &rootCfg);
 
 
-    /* Configure LPI2C1 using SYS_PLL3_DIV_2 (297MHz) */
-    rootCfg.mux = kCLOCK_LPI2C1_ClockRoot_MuxSysPll2Pfd3;
-    rootCfg.div = 8;  // Divide by DIV + 1 = 9
+    /* Configure LPI2C1 using SYS_PLL3_DIV2 (240MHz) */
+    rootCfg.mux = kCLOCK_LPI2C1_ClockRoot_MuxSysPll3Div2;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpi2c1, &rootCfg);
 
-    /* Configure LPI2C2 using SYS_PLL3_DIV_2 (297MHz) */
-    rootCfg.mux = kCLOCK_LPI2C2_ClockRoot_MuxSysPll2Pfd3;
-    rootCfg.div = 8;  // Divide by DIV + 1 = 9
+    /* Configure LPI2C2 using SYS_PLL3_DIV2 (240MHz) */
+    rootCfg.mux = kCLOCK_LPI2C2_ClockRoot_MuxSysPll3Div2;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpi2c2, &rootCfg);
 
-    /* Configure LPI2C3 using SYS_PLL3_DIV_2 (297MHz) */
-    rootCfg.mux = kCLOCK_LPI2C3_ClockRoot_MuxSysPll2Pfd3;
-    rootCfg.div = 8;  // Divide by DIV + 1 = 9
+    /* Configure LPI2C3 using SYS_PLL3_DIV2 (240MHz) */
+    rootCfg.mux = kCLOCK_LPI2C3_ClockRoot_MuxSysPll3Div2;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpi2c3, &rootCfg);
 
-    /* Configure LPI2C4 using SYS_PLL3_DIV_2 (297MHz) */
-    rootCfg.mux = kCLOCK_LPI2C4_ClockRoot_MuxSysPll2Pfd3;
-    rootCfg.div = 8;  // Divide by DIV + 1 = 9
+    /* Configure LPI2C4 using SYS_PLL3_DIV2 (240MHz) */
+    rootCfg.mux = kCLOCK_LPI2C4_ClockRoot_MuxSysPll3Div2;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Lpi2c4, &rootCfg);
 
-    /* Configure LPI2C5 using SYS_PLL3_DIV_2 (297MHz) */
-    rootCfg.mux = kCLOCK_LPI2C5_ClockRoot_MuxSysPll2Pfd3;
-    rootCfg.div = 8;  // Divide by DIV + 1 = 9
+    /* Configure LPI2C5 using SYS_PLL3_OUT (480MHz) */
+    rootCfg.mux = kCLOCK_LPI2C5_ClockRoot_MuxSysPll3Out;
+    rootCfg.div = 8;
     CLOCK_SetRootClock(kCLOCK_Root_Lpi2c5, &rootCfg);
 
-    /* Configure LPI2C6 using SYS_PLL3_DIV_2 (297MHz) */
-    rootCfg.mux = kCLOCK_LPI2C6_ClockRoot_MuxSysPll2Pfd3;
-    rootCfg.div = 8;  // Divide by DIV + 1 = 9
+    /* Configure LPI2C6 using SYS_PLL3_OUT (480MHz) */
+    rootCfg.mux = kCLOCK_LPI2C6_ClockRoot_MuxSysPll3Out;
+    rootCfg.div = 8;
     CLOCK_SetRootClock(kCLOCK_Root_Lpi2c6, &rootCfg);
 
 
     /* Configure LPSPI1 using SYS_PLL_3_PDF2 (270MHz) */
     rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxSysPll3Pfd2;
-    rootCfg.div = 2;  // Divide by DIV + 1 = 3
+    rootCfg.div = 2;
     CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 
     /* Configure LPSPI2 using SYS_PLL_3_PDF2 (270MHz) */
     rootCfg.mux = kCLOCK_LPSPI2_ClockRoot_MuxSysPll3Pfd2;
-    rootCfg.div = 2;  // Divide by DIV + 1 = 3
+    rootCfg.div = 2;
     CLOCK_SetRootClock(kCLOCK_Root_Lpspi2, &rootCfg);
 
     /* Configure LPSPI3 using SYS_PLL_3_PDF2 (270MHz) */
     rootCfg.mux = kCLOCK_LPSPI3_ClockRoot_MuxSysPll3Pfd2;
-    rootCfg.div = 2;  // Divide by DIV + 1 = 3
+    rootCfg.div = 2;
     CLOCK_SetRootClock(kCLOCK_Root_Lpspi3, &rootCfg);
 
     /* Configure LPSPI4 using SYS_PLL_3_PDF2 (270MHz) */
     rootCfg.mux = kCLOCK_LPSPI4_ClockRoot_MuxSysPll3Pfd2;
-    rootCfg.div = 2;  // Divide by DIV + 1 = 3
+    rootCfg.div = 2;
     CLOCK_SetRootClock(kCLOCK_Root_Lpspi4, &rootCfg);
 
     /* Configure LPSPI5 using SYS_PLL_3_PDF2 (270MHz) */
     rootCfg.mux = kCLOCK_LPSPI5_ClockRoot_MuxSysPll3Pfd2;
-    rootCfg.div = 2;  // Divide by DIV + 1 = 3
+    rootCfg.div = 2;
     CLOCK_SetRootClock(kCLOCK_Root_Lpspi5, &rootCfg);
 
     /* Configure LPSPI6 using SYS_PLL_3_PDF2 (270MHz) */
     rootCfg.mux = kCLOCK_LPSPI6_ClockRoot_MuxSysPll3Pfd2;
-    rootCfg.div = 2;  // Divide by DIV + 1 = 3
+    rootCfg.div = 2;
     CLOCK_SetRootClock(kCLOCK_Root_Lpspi6, &rootCfg);
 
 
@@ -671,7 +673,7 @@ void BOARD_BootClockRUN(void) {
     /* Set ENET Tx clock source. */
     IOMUXC_GPR->GPR4 &= ~IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL_MASK;
     /* Set ENET_1G Tx clock source. */
-    IOMUXC_GPR->GPR5 &= ~IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL_MASK;
+    IOMUXC_GPR->GPR5 = ((IOMUXC_GPR->GPR5 & ~IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL_MASK) | IOMUXC_GPR_GPR5_ENET1G_RGMII_EN_MASK);
     /* Set GPT1 High frequency reference clock source. */
     IOMUXC_GPR->GPR22 &= ~IOMUXC_GPR_GPR22_REF_1M_CLK_GPT1_MASK;
     /* Set GPT2 High frequency reference clock source. */

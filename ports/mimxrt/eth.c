@@ -262,22 +262,12 @@ STATIC uint32_t eth_clock_init(int eth_id, bool phy_clock) {
     CLOCK_EnableClock(kCLOCK_Iomuxc);
 
     #if defined MIMXRT117x_SERIES
-    // Select syspll2pfd3, 528*18/24 = 396M
-    CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 24);
-    const clock_sys_pll1_config_t sysPll1Config = {
-        .pllDiv2En = true,
-    };
-    CLOCK_InitSysPll1(&sysPll1Config);
 
-    // Generate 198M bus clock.
     clock_root_config_t rootCfg = {0};
-    rootCfg.mux = 7;
-    rootCfg.div = 2;
-    CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
 
     if (eth_id == MP_HAL_MAC_ETH0) {
-        // Generate 50M/125M root clock.
-        rootCfg.mux = 4;
+        // Generate 50M root clock.
+        rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2; // 500 MHz
         rootCfg.div = 10;
         CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
         // 50M ENET_REF_CLOCK output to PHY and ENET module.
@@ -285,7 +275,7 @@ STATIC uint32_t eth_clock_init(int eth_id, bool phy_clock) {
         IOMUXC_GPR->GPR4 |= 0x3;
     } else {
         // Generate 125M root clock.
-        rootCfg.mux = 4;
+        rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2; // 500 MHz
         rootCfg.div = 4;
         CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);
         IOMUXC_GPR->GPR5 |= IOMUXC_GPR_GPR5_ENET1G_RGMII_EN_MASK; /* bit1:iomuxc_gpr_enet_clk_dir

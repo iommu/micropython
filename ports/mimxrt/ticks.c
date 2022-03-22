@@ -41,12 +41,12 @@ void ticks_init(void) {
     ticks_ms_upper = 0;
 
     gpt_config_t config;
-    config.clockSource = kGPT_ClockSource_Osc;
     #if defined MIMXRT117x_SERIES
-    config.divider = 8; // XTAL is 24MHz
+    config.clockSource = kGPT_ClockSource_HighFreq;
     #else
-    config.divider = 24; // XTAL is 24MHz
+    config.clockSource = kGPT_ClockSource_Osc;
     #endif
+    config.divider = 24; // XTAL is 24MHz
     config.enableFreeRun = true;
     config.enableRunInWait = true;
     config.enableRunInStop = true;
