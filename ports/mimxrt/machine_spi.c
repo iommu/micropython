@@ -39,13 +39,10 @@
 #include "fsl_lpspi_edma.h"
 
 #define DEFAULT_SPI_BAUDRATE    (1000000)
-#define DEFAULT_SPI_POLARITY    (0)
-#define DEFAULT_SPI_PHASE       (0)
-#define DEFAULT_SPI_BITS        (8)
-#define DEFAULT_SPI_FIRSTBIT    (kLPSPI_MsbFirst)
 #define DEFAULT_SPI_DRIVE       (6)
+#define DEFAULT_SPI_CS          (0)
 
-#define CLOCK_DIVIDER           (1)
+#define CLOCK_DIVIDER           (2)
 
 #define MICROPY_HW_SPI_NUM MP_ARRAY_SIZE(spi_index_table)
 
@@ -81,6 +78,18 @@ static const iomux_table_t iomux_table[] = {
 
 static uint16_t dma_req_src_rx[] = DMA_REQ_SRC_RX;
 static uint16_t dma_req_src_tx[] = DMA_REQ_SRC_TX;
+
+static const mp_arg_t allowed_args[] = {
+    { MP_QSTR_id,       MP_ARG_REQUIRED | MP_ARG_OBJ },
+    { MP_QSTR_drive,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = DEFAULT_SPI_DRIVE} },
+    { MP_QSTR_cs,       MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = DEFAULT_SPI_CS} },
+    { MP_QSTR_baudrate, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
+    { MP_QSTR_polarity, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
+    { MP_QSTR_phase,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
+    { MP_QSTR_bits,     MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
+    { MP_QSTR_firstbit, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
+    { MP_QSTR_gap_ns,   MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
+};
 
 bool lpspi_set_iomux(int8_t spi, uint8_t drive, uint8_t cs) {
     int index = (spi - 1) * 5;
@@ -125,90 +134,12 @@ STATIC void machine_spi_print(const mp_print_t *print, mp_obj_t self_in, mp_prin
         firstbit_str[self->master_config->direction], self->master_config->betweenTransferDelayInNanoSec);
 }
 
-mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    enum { ARG_id, ARG_baudrate, ARG_polarity, ARG_phase, ARG_bits, ARG_firstbit, ARG_gap_ns, ARG_drive, ARG_cs };
-    static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_id,       MP_ARG_REQUIRED | MP_ARG_OBJ },
-        { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = DEFAULT_SPI_BAUDRATE} },
-        { MP_QSTR_polarity, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = DEFAULT_SPI_POLARITY} },
-        { MP_QSTR_phase,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = DEFAULT_SPI_PHASE} },
-        { MP_QSTR_bits,     MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = DEFAULT_SPI_BITS} },
-        { MP_QSTR_firstbit, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = DEFAULT_SPI_FIRSTBIT} },
-        { MP_QSTR_gap_ns,   MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_drive,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = DEFAULT_SPI_DRIVE} },
-        { MP_QSTR_cs,       MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
-    };
-
-    static bool clk_init = true;
-
-    // Parse the arguments.
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-    // Get the SPI bus id.
-    int spi_id = mp_obj_get_int(args[ARG_id].u_obj);
-    if (spi_id < 0 || spi_id >= MP_ARRAY_SIZE(spi_index_table) || spi_index_table[spi_id] == 0) {
-        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("SPI(%d) doesn't exist"), spi_id);
-    }
-
-    // Get peripheral object.
-    uint8_t spi_hw_id = spi_index_table[spi_id];  // the hw spi number 1..n
-    machine_spi_obj_t *self = mp_obj_malloc(machine_spi_obj_t, &machine_spi_type);
-    self->spi_id = spi_id;
-    self->spi_inst = spi_base_ptr_table[spi_hw_id];
-    self->spi_hw_id = spi_hw_id;
-
-    uint8_t drive = args[ARG_drive].u_int;
-    if (drive < 1 || drive > 7) {
-        drive = DEFAULT_SPI_DRIVE;
-    }
-
-    if (clk_init) {
-        clk_init = false;
-        /*Set clock source for LPSPI*/
-        CLOCK_SetMux(kCLOCK_LpspiMux, 1);  // Clock source is kCLOCK_Usb1PllPfd1Clk
-        CLOCK_SetDiv(kCLOCK_LpspiDiv, CLOCK_DIVIDER);
-    }
-    LPSPI_Reset(self->spi_inst);
-    LPSPI_Enable(self->spi_inst, false);  // Disable first before new settings are applies
-
-    self->master_config = m_new_obj(lpspi_master_config_t);
-    LPSPI_MasterGetDefaultConfig(self->master_config);
-    // Initialise the SPI peripheral.
-    self->master_config->baudRate = args[ARG_baudrate].u_int;
-    self->master_config->betweenTransferDelayInNanoSec = 1000000000 / self->master_config->baudRate * 2;
-    self->master_config->cpol = args[ARG_polarity].u_int;
-    self->master_config->cpha = args[ARG_phase].u_int;
-    self->master_config->bitsPerFrame = args[ARG_bits].u_int;
-    self->master_config->direction = args[ARG_firstbit].u_int;
-    if (args[ARG_gap_ns].u_int != -1) {
-        self->master_config->betweenTransferDelayInNanoSec = args[ARG_gap_ns].u_int;
-    }
-    uint8_t cs = args[ARG_cs].u_int;
-    if (cs <= 1) {
-        self->master_config->whichPcs = cs;
-    }
-    LPSPI_MasterInit(self->spi_inst, self->master_config, CLOCK_GetFreq(kCLOCK_Usb1PllPfd0Clk) / (CLOCK_DIVIDER + 1));
-    lpspi_set_iomux(spi_index_table[spi_id], drive, cs);
-
-    return MP_OBJ_FROM_PTR(self);
-}
-
-STATIC void machine_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+STATIC void machine_spi_init_helper(mp_obj_base_t *self_in, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_baudrate, ARG_polarity, ARG_phase, ARG_bits, ARG_firstbit, ARG_gap_ns };
-    static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_baudrate, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_polarity, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_phase,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_bits,     MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_firstbit, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_gap_ns,   MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
-    };
-
     // Parse the arguments.
     machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args) - 3];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args) - 3, allowed_args + 3, args);
 
     // Reconfigure the baudrate if requested.
     if (args[ARG_baudrate].u_int != -1) {
@@ -231,8 +162,63 @@ STATIC void machine_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_obj
     if (args[ARG_gap_ns].u_int != -1) {
         self->master_config->betweenTransferDelayInNanoSec = args[ARG_gap_ns].u_int;
     }
-    LPSPI_Enable(self->spi_inst, false);  // Disable first before new settings are applies
+    self->master_config->lastSckToPcsDelayInNanoSec = self->master_config->betweenTransferDelayInNanoSec;
+    self->master_config->pcsToSckDelayInNanoSec = self->master_config->betweenTransferDelayInNanoSec;
+
+    LPSPI_Enable(self->spi_inst, false);  // Disable first before the settings are applied
     LPSPI_MasterInit(self->spi_inst, self->master_config, CLOCK_GetFreq(kCLOCK_Usb1PllPfd0Clk) / (CLOCK_DIVIDER + 1));
+}
+
+mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+    enum { ARG_id, ARG_drive, ARG_cs, ARG_baudrate, ARG_polarity, ARG_phase, ARG_bits, ARG_firstbit, ARG_gap_ns };
+
+    // Parse the arguments.
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    // Get the SPI bus id.
+    int spi_id = mp_obj_get_int(args[ARG_id].u_obj);
+    if (spi_id < 0 || spi_id >= MP_ARRAY_SIZE(spi_index_table) || spi_index_table[spi_id] == 0) {
+        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("SPI(%d) doesn't exist"), spi_id);
+    }
+
+    // Get peripheral object.
+    uint8_t spi_hw_id = spi_index_table[spi_id];  // the hw spi number 1..n
+    machine_spi_obj_t *self = mp_obj_malloc(machine_spi_obj_t, &machine_spi_type);
+    self->master_config = m_new_obj(lpspi_master_config_t);
+    self->spi_id = spi_id;
+    self->spi_inst = spi_base_ptr_table[spi_hw_id];
+    self->spi_hw_id = spi_hw_id;
+    LPSPI_MasterGetDefaultConfig(self->master_config);
+    self->master_config->baudRate = DEFAULT_SPI_BAUDRATE;
+
+    uint8_t drive = args[ARG_drive].u_int;
+    if (drive < 1 || drive > 7) {
+        drive = DEFAULT_SPI_DRIVE;
+    }
+    uint8_t cs = args[ARG_cs].u_int;
+    if (cs <= 1) {
+        self->master_config->whichPcs = cs;
+    }
+
+
+    static bool clk_init = true;
+    if (clk_init) {
+        clk_init = false;
+        /*Set clock source for LPSPI*/
+        CLOCK_SetMux(kCLOCK_LpspiMux, 1);  // Clock source is kCLOCK_Usb1PllPfd1Clk
+        CLOCK_SetDiv(kCLOCK_LpspiDiv, CLOCK_DIVIDER);
+    }
+
+    LPSPI_Reset(self->spi_inst);
+    lpspi_set_iomux(spi_index_table[spi_id], drive, cs);
+
+    // Process the remaining parameters
+    mp_map_t kw_args;
+    mp_map_init_fixed_table(&kw_args, n_kw, all_args + n_args);
+    machine_spi_init_helper(MP_OBJ_FROM_PTR(self), n_args - 1, all_args + 1, &kw_args);
+
+    return MP_OBJ_FROM_PTR(self);
 }
 
 void LPSPI_EDMAMasterCallback(LPSPI_Type *base, lpspi_master_edma_handle_t *handle, status_t status, void *self_in) {
@@ -342,7 +328,7 @@ STATIC void machine_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8
 }
 
 STATIC const mp_machine_spi_p_t machine_spi_p = {
-    .init = machine_spi_init,
+    .init = machine_spi_init_helper,
     .transfer = machine_spi_transfer,
 };
 
