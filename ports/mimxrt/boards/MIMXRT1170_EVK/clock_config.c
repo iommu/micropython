@@ -583,7 +583,7 @@ void BOARD_BootClockRUN(void) {
     CLOCK_SetRootClock(kCLOCK_Root_Spdif, &rootCfg);
 
     /* Configure SAI1 using OSC_RC_48M_DIV2 */
-    rootCfg.mux = kCLOCK_SAI1_ClockRoot_MuxOscRc48MDiv2;
+    rootCfg.mux = kCLOCK_SAI1_ClockRoot_MuxOsc24MOut;
     rootCfg.div = 1;
     CLOCK_SetRootClock(kCLOCK_Root_Sai1, &rootCfg);
 

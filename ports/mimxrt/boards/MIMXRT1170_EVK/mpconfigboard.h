@@ -82,16 +82,14 @@
     { IOMUXC_GPIO_LPSR_05_LPI2C5_SCL }, { IOMUXC_GPIO_LPSR_04_LPI2C5_SDA }, \
     { IOMUXC_GPIO_LPSR_11_LPI2C6_SCL }, { IOMUXC_GPIO_LPSR_10_LPI2C6_SDA },
 
-#if 0
 #define MICROPY_PY_MACHINE_I2S (1)
 #define MICROPY_HW_I2S_NUM (1)
-#define I2S_CLOCK_MUX { 0, kCLOCK_Sai1Mux, kCLOCK_Sai2Mux }
-#define I2S_CLOCK_PRE_DIV { 0, kCLOCK_Sai1PreDiv, kCLOCK_Sai2PreDiv }
-#define I2S_CLOCK_DIV { 0, kCLOCK_Sai1Div, kCLOCK_Sai2Div }
-#define I2S_IOMUXC_GPR_MODE { 0, kIOMUXC_GPR_SAI1MClkOutputDir, kIOMUXC_GPR_SAI2MClkOutputDir }
-#define I2S_DMA_REQ_SRC_RX { 0, kDmaRequestMuxSai1Rx, kDmaRequestMuxSai2Rx }
-#define I2S_DMA_REQ_SRC_TX { 0, kDmaRequestMuxSai1Tx, kDmaRequestMuxSai2Tx }
+#define I2S_CLOCK_MUX { 0, kCLOCK_Root_Sai1, kCLOCK_Root_Sai2, kCLOCK_Root_Sai3, kCLOCK_Root_Sai4 }
+#define I2S_DMA_REQ_SRC_RX { 0, kDmaRequestMuxSai1Rx, kDmaRequestMuxSai2Rx, kDmaRequestMuxSai3Rx, kDmaRequestMuxSai4Rx }
+#define I2S_DMA_REQ_SRC_TX { 0, kDmaRequestMuxSai1Tx, kDmaRequestMuxSai2Tx, kDmaRequestMuxSai3Tx, kDmaRequestMuxSai4Tx }
 #define I2S_WM8960_RX_MODE  (1)
+#define I2S_AUDIO_PLL_CLOCK (4U)
+#define DMAMUX DMAMUX0
 
 #define I2S_GPIO(_hwid, _fn, _mode, _pin, _iomux) \
     { \
@@ -113,7 +111,6 @@
         I2S_GPIO(1, SD, TX, GPIO_AD_21, IOMUXC_GPIO_AD_21_SAI1_TX_DATA00), \
     }
 
-#endif
 // USDHC1
 
 #define USDHC_DUMMY_PIN NULL, 0
