@@ -252,18 +252,15 @@ void BOARD_BootClockRUN(void) {
     #endif
 
     /* Configure BUS using SYS_PLL3_CLK */
-    // #if __CORTEX_M == 7
     rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll3Out;
     rootCfg.div = 3;
     CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
-    // #endif
 
     /* Configure BUS_LPSR using SYS_PLL3_CLK */
-    // #if __CORTEX_M == 4
+    /* BUS_LPSR must not be more than 120MHz */
     rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
-    rootCfg.div = 3;
+    rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
-    // #endif
 
     /* Configure SEMC using SYS_PLL2_PFD1_CLK */
     #ifndef SKIP_SEMC_INIT
@@ -288,6 +285,7 @@ void BOARD_BootClockRUN(void) {
     rootCfg.div = 4;
     CLOCK_SetRootClock(kCLOCK_Root_Cstrace, &rootCfg);
 
+    // Strange settings for SYSTICK: 24MHz for M4, 100kHz for M7 ?
     /* Configure M4_SYSTICK using OSC_RC_48M_DIV2 */
     #if __CORTEX_M == 4
     rootCfg.mux = kCLOCK_M4_SYSTICK_ClockRoot_MuxOscRc48MDiv2;

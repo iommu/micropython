@@ -207,24 +207,24 @@ STATIC const int8_t i2s_frame_map[NUM_I2S_USER_FORMATS][I2S_RX_FRAME_SIZE_IN_BYT
 // PLL output frequency = 24MHz * (.loopDivider + .numerator/.denominator)
 
 // Configuration 1: for sampling frequencies [Hz]:  8000, 12000, 16000, 24000, 32000, 48000
-// Clock frequency = 786,432,000 Hz
+// Clock frequency = 786,432,000 Hz = 48000 * 64 * 256
 STATIC const clock_audio_pll_config_t audioPllConfig_8000_48000 = {
     .loopDivider = 32,          // PLL loop divider. Valid range for DIV_SELECT divider value: 27~54
     .postDivider = 1,           // Divider after the PLL, should only be 1, 2, 4, 8, 16
-    .numerator = 768,          // 30 bit numerator of fractional loop divider
-    .denominator = 1000,       // 30 bit denominator of fractional loop divider
+    .numerator = 76800,         // 30 bit numerator of fractional loop divider
+    .denominator = 100000,      // 30 bit denominator of fractional loop divider
     #if !defined(MIMXRT117x_SERIES)
     .src = kCLOCK_PllClkSrc24M  // Pll clock source
     #endif
 };
 
 // Configuration 2: for sampling frequencies [Hz]:  11025, 22050, 44100
-// Clock frequency = 722,534,400
+// Clock frequency = 722,534,400 = 44100 * 64 * 256
 STATIC const clock_audio_pll_config_t audioPllConfig_11025_44100 = {
     .loopDivider = 30,          // PLL loop divider. Valid range for DIV_SELECT divider value: 27~54
     .postDivider = 1,           // Divider after the PLL, should only be 1, 2, 4, 8, 16
-    .numerator = 1056,          // 30 bit numerator of fractional loop divider
-    .denominator = 10000,       // 30 bit denominator of fractional loop divider
+    .numerator = 10560,         // 30 bit numerator of fractional loop divider
+    .denominator = 100000,      // 30 bit denominator of fractional loop divider
     #if !defined(MIMXRT117x_SERIES)
     .src = kCLOCK_PllClkSrc24M  // Pll clock source
     #endif
@@ -707,11 +707,17 @@ STATIC bool i2s_init(machine_i2s_obj_t *self) {
     CLOCK_InitAudioPll(&pll_config);
     CLOCK_SetRootClockMux(i2s_clock_mux[self->i2s_id], I2S_AUDIO_PLL_CLOCK);
     CLOCK_SetRootClockDiv(i2s_clock_mux[self->i2s_id], get_clock_divider(self->rate));
+    uint32_t clock_freq = CLOCK_GetFreq(kCLOCK_AudioPllOut) / get_clock_divider(self->rate);
+
     #else
+
     CLOCK_InitAudioPll(get_pll_config(self->rate));
     CLOCK_SetMux(i2s_clock_mux[self->i2s_id], I2S_AUDIO_PLL_CLOCK);
     CLOCK_SetDiv(i2s_clock_pre_div[self->i2s_id], get_clock_pre_divider(self->rate));
     CLOCK_SetDiv(i2s_clock_div[self->i2s_id], get_clock_divider(self->rate));
+    uint32_t clock_freq =
+        (CLOCK_GetFreq(kCLOCK_AudioPllClk) / (get_clock_divider(self->rate) + 1U) /
+            (get_clock_pre_divider(self->rate) + 1U));
     #endif
 
     if (!set_iomux(self->sck, SCK, self->i2s_id)) {
@@ -794,14 +800,6 @@ STATIC bool i2s_init(machine_i2s_obj_t *self) {
     } else {
         return false; // should never happen
     }
-
-    #if defined(MIMXRT117x_SERIES)
-    uint32_t clock_freq = CLOCK_GetFreq(kCLOCK_AudioPllOut) / get_clock_divider(self->rate);
-    #else
-    uint32_t clock_freq =
-        (CLOCK_GetFreq(kCLOCK_AudioPllClk) / (get_clock_divider(self->rate) + 1U) /
-            (get_clock_pre_divider(self->rate) + 1U));
-    #endif
 
     SAI_TxSetBitClockRate(self->i2s_inst, clock_freq, self->rate, get_dma_bits(self->mode, self->bits),
         SAI_NUM_AUDIO_CHANNELS);
