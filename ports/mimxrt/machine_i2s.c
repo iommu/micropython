@@ -702,7 +702,7 @@ STATIC void edma_i2s_callback(edma_handle_t *handle, void *userData, bool transf
 STATIC bool i2s_init(machine_i2s_obj_t *self) {
 
     #if defined(MIMXRT117x_SERIES)
-    clock_audio_pll_config_t  pll_config = *get_pll_config(self->rate);
+    clock_audio_pll_config_t pll_config = *get_pll_config(self->rate);
     pll_config.postDivider = get_clock_pre_divider(self->rate);
     CLOCK_InitAudioPll(&pll_config);
     CLOCK_SetRootClockMux(i2s_clock_mux[self->i2s_id], I2S_AUDIO_PLL_CLOCK);

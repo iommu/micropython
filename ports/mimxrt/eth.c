@@ -90,20 +90,20 @@ static phy_handle_t phyHandle;
 eth_t eth_instance0;
 
 static enet_buffer_config_t buffConfig[] = {{
-                                         ENET_RXBD_NUM,
-                                         ENET_TXBD_NUM,
-                                         SDK_SIZEALIGN(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT),
-                                         SDK_SIZEALIGN(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT),
-                                         &g_rxBuffDescrip[0],
-                                         &g_txBuffDescrip[0],
-                                         &g_rxDataBuff[0][0],
-                                         &g_txDataBuff[0][0],
-                                         #if FSL_ENET_DRIVER_VERSION >= 0x020300
-                                         true,
-                                         true,
-                                         NULL,
-                                         #endif
-                                     }};
+                                                ENET_RXBD_NUM,
+                                                ENET_TXBD_NUM,
+                                                SDK_SIZEALIGN(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT),
+                                                SDK_SIZEALIGN(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT),
+                                                &g_rxBuffDescrip[0],
+                                                &g_txBuffDescrip[0],
+                                                &g_rxDataBuff[0][0],
+                                                &g_txDataBuff[0][0],
+                                                #if FSL_ENET_DRIVER_VERSION >= 0x020300
+                                                true,
+                                                true,
+                                                NULL,
+                                                #endif
+                                            }};
 
 static const iomux_table_t iomux_table_enet[] = {
     IOMUX_TABLE_ENET
@@ -127,20 +127,20 @@ static phy_handle_t phyHandle_1;
 eth_t eth_instance1;
 
 static enet_buffer_config_t buffConfig_1[] = {{
-                                         ENET_RXBD_NUM,
-                                         ENET_TXBD_NUM,
-                                         SDK_SIZEALIGN(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT),
-                                         SDK_SIZEALIGN(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT),
-                                         &g_rxBuffDescrip_1[0],
-                                         &g_txBuffDescrip_1[0],
-                                         &g_rxDataBuff_1[0][0],
-                                         &g_txDataBuff_1[0][0],
-                                         #if FSL_ENET_DRIVER_VERSION >= 0x020300
-                                         true,
-                                         true,
-                                         NULL,
-                                         #endif
-                                     }};
+                                                  ENET_RXBD_NUM,
+                                                  ENET_TXBD_NUM,
+                                                  SDK_SIZEALIGN(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT),
+                                                  SDK_SIZEALIGN(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT),
+                                                  &g_rxBuffDescrip_1[0],
+                                                  &g_txBuffDescrip_1[0],
+                                                  &g_rxDataBuff_1[0][0],
+                                                  &g_txDataBuff_1[0][0],
+                                                  #if FSL_ENET_DRIVER_VERSION >= 0x020300
+                                                  true,
+                                                  true,
+                                                  NULL,
+                                                  #endif
+                                              }};
 
 static const iomux_table_t iomux_table_enet_1[] = {
     IOMUX_TABLE_ENET_1
@@ -179,20 +179,6 @@ static uint8_t hw_addr_1[6]; // The MAC address field
 #define TRACE_ETH_RX    (0x0004)
 #define TRACE_ETH_FULL  (0x0008)
 
-// Function arguments for the new lib defining ring parameters
-#if FSL_ENET_DRIVER_VERSION >= 0x020300
-#define ENET_RING_ID  , 0
-#define ENET_RING_ID_PTR  , 0, NULL
-#define ENET_RING_ID_FLAG_PTR  , 0, false, NULL
-#endif
-
-// Define dummy function arguments for using the MIMXRT10xx legacy libraries
-// which do not support rińgs
-#ifndef ENET_RING_ID
-#define ENET_RING_ID
-#define ENET_RING_ID_PTR
-#define ENET_RING_ID_FLAG_PTR
-#endif
 
 STATIC void eth_trace(eth_t *self, size_t len, const void *data, unsigned int flags) {
     if (((flags & NETUTILS_TRACE_IS_TX) && (self->trace_flags & TRACE_ETH_TX))

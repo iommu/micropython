@@ -337,7 +337,7 @@ STATIC void configure_pwm(machine_pwm_obj_t *self) {
         #if !defined(MIMXRT117x_SERIES)
         CLOCK_SetDiv(kCLOCK_IpgDiv, 0x3); // Set IPG PODF to 3, divide by 4
         #endif
-         set_frequency = false;
+        set_frequency = false;
     }
 
     if (self->duty_ns != 0) {

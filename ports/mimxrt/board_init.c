@@ -83,7 +83,7 @@ void board_init(void) {
     #endif
     // RTC
     machine_rtc_start();
-    
+
     // OCRAM wait states (discarded, but code kept)
     #if 0
     MECC1->PIPE_ECC_EN =

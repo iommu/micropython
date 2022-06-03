@@ -36,14 +36,10 @@
 #define TIMER_MODE_PERIODIC (1)
 #define TIMER_MIN_PERIOD 1
 
-<<<<<<< HEAD
-#define alarm_callback PIT_IRQHandler
-=======
 #if defined MIMXRT117x_SERIES
 #define PIT_IRQ_ID PIT1_IRQn
 #define alarm_callback PIT1_IRQHandler
 #else
->>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
 #define PIT_IRQ_ID PIT_IRQn
 #define alarm_callback PIT_IRQHandler
 #endif
@@ -130,11 +126,7 @@ STATIC mp_obj_t machine_timer_init_helper(machine_timer_obj_t *self, size_t n_ar
     self->callback = args[ARG_callback].u_obj;
 
     // Set timer period for channel id
-<<<<<<< HEAD
-    PIT_SetTimerPeriod(PIT, self->channel, USEC_TO_COUNT(self->delta_us, BOARD_BOOTCLOCKRUN_IPG_CLK_ROOT));
-=======
     PIT_SetTimerPeriod(board_timer_pit, self->channel, USEC_TO_COUNT(self->delta_us, BOARD_BOOTCLOCKRUN_PERCLK_CLK_ROOT));
->>>>>>> 9a8ae7422 (mimxrt1170: Bring the 1176 port in sync with MP Master.)
 
     // Enable timer interrupts for the channel
     PIT_EnableInterrupts(board_timer_pit, self->channel, kPIT_TimerInterruptEnable);

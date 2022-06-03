@@ -53,9 +53,9 @@
  ******************************************************************************/
 
 static status_t PHY_RTL8211F_MMD_SetDevice(phy_handle_t *handle,
-                                           uint8_t device,
-                                           uint16_t addr,
-                                           phy_mmd_access_mode_t mode);
+    uint8_t device,
+    uint16_t addr,
+    phy_mmd_access_mode_t mode);
 static inline status_t PHY_RTL8211F_MMD_ReadData(phy_handle_t *handle, uint32_t *data);
 static inline status_t PHY_RTL8211F_MMD_WriteData(phy_handle_t *handle, uint32_t data);
 static status_t PHY_RTL8211F_MMD_Read(phy_handle_t *handle, uint8_t device, uint16_t addr, uint32_t *data);
@@ -65,21 +65,20 @@ static status_t PHY_RTL8211F_MMD_Write(phy_handle_t *handle, uint8_t device, uin
  * Variables
  ******************************************************************************/
 
-const phy_operations_t phyrtl8211f_ops = {.phyInit            = PHY_RTL8211F_Init,
-                                          .phyWrite           = PHY_RTL8211F_Write,
-                                          .phyRead            = PHY_RTL8211F_Read,
-                                          .getAutoNegoStatus  = PHY_RTL8211F_GetAutoNegotiationStatus,
-                                          .getLinkStatus      = PHY_RTL8211F_GetLinkStatus,
+const phy_operations_t phyrtl8211f_ops = {.phyInit = PHY_RTL8211F_Init,
+                                          .phyWrite = PHY_RTL8211F_Write,
+                                          .phyRead = PHY_RTL8211F_Read,
+                                          .getAutoNegoStatus = PHY_RTL8211F_GetAutoNegotiationStatus,
+                                          .getLinkStatus = PHY_RTL8211F_GetLinkStatus,
                                           .getLinkSpeedDuplex = PHY_RTL8211F_GetLinkSpeedDuplex,
                                           .setLinkSpeedDuplex = PHY_RTL8211F_SetLinkSpeedDuplex,
-                                          .enableLoopback     = PHY_RTL8211F_EnableLoopback};
+                                          .enableLoopback = PHY_RTL8211F_EnableLoopback};
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
-status_t PHY_RTL8211F_Init(phy_handle_t *handle, const phy_config_t *config)
-{
+status_t PHY_RTL8211F_Init(phy_handle_t *handle, const phy_config_t *config) {
     uint32_t counter = PHY_READID_TIMEOUT_COUNT;
     status_t result;
     uint32_t regValue = 0U;
@@ -94,124 +93,98 @@ status_t PHY_RTL8211F_Init(phy_handle_t *handle, const phy_config_t *config)
     do
     {
         result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_ID1_REG, &regValue);
-        if (result != kStatus_Success)
-        {
+        if (result != kStatus_Success) {
             return result;
         }
         counter--;
     } while ((regValue != PHY_CONTROL_ID1) && (counter != 0U));
 
-    if (counter == 0U)
-    {
+    if (counter == 0U) {
         return kStatus_Fail;
     }
 
     /* Reset PHY. */
     result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG, PHY_BCTL_RESET_MASK);
-    if (result != kStatus_Success)
-    {
+    if (result != kStatus_Success) {
         return result;
     }
 
     /* The RGMII specifies output TXC/RXC and TXD/RXD without any clock skew. Need to add skew on clock line
        to make sure the other side sample right data. This can also be done in PCB traces. */
     result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_PAGE_SELECT_REG, PHY_PAGE_RGMII_TXRX_DELAY_ADDR);
-    if (result != kStatus_Success)
-    {
+    if (result != kStatus_Success) {
         return result;
     }
     /* Set Tx Delay. */
     result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_RGMII_TX_DELAY_REG, &regValue);
-    if (result == kStatus_Success)
-    {
+    if (result == kStatus_Success) {
         regValue |= PHY_RGMII_TX_DELAY_MASK;
         result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_RGMII_TX_DELAY_REG, regValue);
-        if (result != kStatus_Success)
-        {
+        if (result != kStatus_Success) {
             return result;
         }
-    }
-    else
-    {
+    } else {
         return result;
     }
     /* Set Rx Delay. */
     result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_RGMII_RX_DELAY_REG, &regValue);
-    if (result == kStatus_Success)
-    {
+    if (result == kStatus_Success) {
         regValue |= PHY_RGMII_RX_DELAY_MASK;
         result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_RGMII_RX_DELAY_REG, regValue);
-        if (result != kStatus_Success)
-        {
+        if (result != kStatus_Success) {
             return result;
         }
-    }
-    else
-    {
+    } else {
         return result;
     }
     /* Restore to default page 0 */
     result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_PAGE_SELECT_REG, 0x0);
-    if (result != kStatus_Success)
-    {
+    if (result != kStatus_Success) {
         return result;
     }
 
     /* Energy Efficient Ethernet configuration */
-    if (config->enableEEE)
-    {
+    if (config->enableEEE) {
         /* Get capabilities */
         result = PHY_RTL8211F_MMD_Read(handle, PHY_MDIO_MMD_PCS, PHY_MDIO_PCS_EEE_CAP, &regValue);
-        if (result == kStatus_Success)
-        {
+        if (result == kStatus_Success) {
             /* Enable EEE for 100TX and 1000T */
             result = PHY_RTL8211F_MMD_Write(handle, PHY_MDIO_MMD_AN, PHY_MDIO_AN_EEE_ADV,
-                                            regValue & (PHY_MDIO_EEE_1000T | PHY_MDIO_EEE_100TX));
+                regValue & (PHY_MDIO_EEE_1000T | PHY_MDIO_EEE_100TX));
         }
-    }
-    else
-    {
+    } else {
         result = PHY_RTL8211F_MMD_Write(handle, PHY_MDIO_MMD_AN, PHY_MDIO_AN_EEE_ADV, 0);
     }
-    if (result != kStatus_Success)
-    {
+    if (result != kStatus_Success) {
         return result;
     }
 
-    if (config->autoNeg)
-    {
+    if (config->autoNeg) {
         /* Set the auto-negotiation. */
         result =
             MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_AUTONEG_ADVERTISE_REG,
-                       PHY_100BASETX_FULLDUPLEX_MASK | PHY_100BASETX_HALFDUPLEX_MASK | PHY_10BASETX_FULLDUPLEX_MASK |
-                           PHY_10BASETX_HALFDUPLEX_MASK | PHY_IEEE802_3_SELECTOR_MASK);
-        if (result == kStatus_Success)
-        {
+                PHY_100BASETX_FULLDUPLEX_MASK | PHY_100BASETX_HALFDUPLEX_MASK | PHY_10BASETX_FULLDUPLEX_MASK |
+                PHY_10BASETX_HALFDUPLEX_MASK | PHY_IEEE802_3_SELECTOR_MASK);
+        if (result == kStatus_Success) {
             result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_1000BASET_CONTROL_REG,
-                                PHY_1000BASET_FULLDUPLEX_MASK);
-            if (result == kStatus_Success)
-            {
+                PHY_1000BASET_FULLDUPLEX_MASK);
+            if (result == kStatus_Success) {
                 result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG, &regValue);
-                if (result == kStatus_Success)
-                {
+                if (result == kStatus_Success) {
                     result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG,
-                                        (regValue | PHY_BCTL_AUTONEG_MASK | PHY_BCTL_RESTART_AUTONEG_MASK));
+                        (regValue | PHY_BCTL_AUTONEG_MASK | PHY_BCTL_RESTART_AUTONEG_MASK));
                 }
             }
         }
-    }
-    else
-    {
+    } else {
         /* Disable isolate mode */
         result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG, &regValue);
-        if (result != kStatus_Success)
-        {
+        if (result != kStatus_Success) {
             return result;
         }
         regValue &= PHY_BCTL_ISOLATE_MASK;
         result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG, regValue);
-        if (result != kStatus_Success)
-        {
+        if (result != kStatus_Success) {
             return result;
         }
 
@@ -221,18 +194,15 @@ status_t PHY_RTL8211F_Init(phy_handle_t *handle, const phy_config_t *config)
     return result;
 }
 
-status_t PHY_RTL8211F_Write(phy_handle_t *handle, uint32_t phyReg, uint32_t data)
-{
+status_t PHY_RTL8211F_Write(phy_handle_t *handle, uint32_t phyReg, uint32_t data) {
     return MDIO_Write(handle->mdioHandle, handle->phyAddr, phyReg, data);
 }
 
-status_t PHY_RTL8211F_Read(phy_handle_t *handle, uint32_t phyReg, uint32_t *dataPtr)
-{
+status_t PHY_RTL8211F_Read(phy_handle_t *handle, uint32_t phyReg, uint32_t *dataPtr) {
     return MDIO_Read(handle->mdioHandle, handle->phyAddr, phyReg, dataPtr);
 }
 
-status_t PHY_RTL8211F_GetAutoNegotiationStatus(phy_handle_t *handle, bool *status)
-{
+status_t PHY_RTL8211F_GetAutoNegotiationStatus(phy_handle_t *handle, bool *status) {
     assert(status);
 
     status_t result;
@@ -242,18 +212,15 @@ status_t PHY_RTL8211F_GetAutoNegotiationStatus(phy_handle_t *handle, bool *statu
 
     /* Check auto negotiation complete. */
     result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_BASICSTATUS_REG, &regValue);
-    if (result == kStatus_Success)
-    {
-        if ((regValue & PHY_BSTATUS_AUTONEGCOMP_MASK) != 0U)
-        {
+    if (result == kStatus_Success) {
+        if ((regValue & PHY_BSTATUS_AUTONEGCOMP_MASK) != 0U) {
             *status = true;
         }
     }
     return result;
 }
 
-status_t PHY_RTL8211F_GetLinkStatus(phy_handle_t *handle, bool *status)
-{
+status_t PHY_RTL8211F_GetLinkStatus(phy_handle_t *handle, bool *status) {
     assert(status);
 
     status_t result;
@@ -261,15 +228,11 @@ status_t PHY_RTL8211F_GetLinkStatus(phy_handle_t *handle, bool *status)
 
     /* Read the basic status register. */
     result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_SPECIFIC_STATUS_REG, &regValue);
-    if (result == kStatus_Success)
-    {
-        if ((PHY_SSTATUS_LINKSTATUS_MASK & regValue) != 0U)
-        {
+    if (result == kStatus_Success) {
+        if ((PHY_SSTATUS_LINKSTATUS_MASK & regValue) != 0U) {
             /* Link up. */
             *status = true;
-        }
-        else
-        {
+        } else {
             /* Link down. */
             *status = false;
         }
@@ -277,8 +240,7 @@ status_t PHY_RTL8211F_GetLinkStatus(phy_handle_t *handle, bool *status)
     return result;
 }
 
-status_t PHY_RTL8211F_GetLinkSpeedDuplex(phy_handle_t *handle, phy_speed_t *speed, phy_duplex_t *duplex)
-{
+status_t PHY_RTL8211F_GetLinkSpeedDuplex(phy_handle_t *handle, phy_speed_t *speed, phy_duplex_t *duplex) {
     assert(!((speed == NULL) && (duplex == NULL)));
 
     status_t result;
@@ -286,10 +248,8 @@ status_t PHY_RTL8211F_GetLinkSpeedDuplex(phy_handle_t *handle, phy_speed_t *spee
 
     /* Read the status register. */
     result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_SPECIFIC_STATUS_REG, &regValue);
-    if (result == kStatus_Success)
-    {
-        if (speed != NULL)
-        {
+    if (result == kStatus_Success) {
+        if (speed != NULL) {
             switch ((regValue & PHY_SSTATUS_LINKSPEED_MASK) >> PHY_SSTATUS_LINKSPEED_SHIFT)
             {
                 case (uint32_t)kPHY_Speed10M:
@@ -307,14 +267,10 @@ status_t PHY_RTL8211F_GetLinkSpeedDuplex(phy_handle_t *handle, phy_speed_t *spee
             }
         }
 
-        if (duplex != NULL)
-        {
-            if ((regValue & PHY_SSTATUS_LINKDUPLEX_MASK) != 0U)
-            {
+        if (duplex != NULL) {
+            if ((regValue & PHY_SSTATUS_LINKDUPLEX_MASK) != 0U) {
                 *duplex = kPHY_FullDuplex;
-            }
-            else
-            {
+            } else {
                 *duplex = kPHY_HalfDuplex;
             }
         }
@@ -322,37 +278,27 @@ status_t PHY_RTL8211F_GetLinkSpeedDuplex(phy_handle_t *handle, phy_speed_t *spee
     return result;
 }
 
-status_t PHY_RTL8211F_SetLinkSpeedDuplex(phy_handle_t *handle, phy_speed_t speed, phy_duplex_t duplex)
-{
+status_t PHY_RTL8211F_SetLinkSpeedDuplex(phy_handle_t *handle, phy_speed_t speed, phy_duplex_t duplex) {
     status_t result;
     uint32_t regValue;
 
     result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG, &regValue);
-    if (result == kStatus_Success)
-    {
+    if (result == kStatus_Success) {
         /* Disable the auto-negotiation and set according to user-defined configuration. */
         regValue &= ~PHY_BCTL_AUTONEG_MASK;
-        if (speed == kPHY_Speed1000M)
-        {
+        if (speed == kPHY_Speed1000M) {
             regValue &= PHY_BCTL_SPEED0_MASK;
             regValue |= PHY_BCTL_SPEED1_MASK;
-        }
-        else if (speed == kPHY_Speed100M)
-        {
+        } else if (speed == kPHY_Speed100M) {
             regValue |= PHY_BCTL_SPEED0_MASK;
             regValue &= ~PHY_BCTL_SPEED1_MASK;
-        }
-        else
-        {
+        } else {
             regValue &= ~PHY_BCTL_SPEED0_MASK;
             regValue &= ~PHY_BCTL_SPEED1_MASK;
         }
-        if (duplex == kPHY_FullDuplex)
-        {
+        if (duplex == kPHY_FullDuplex) {
             regValue |= PHY_BCTL_DUPLEX_MASK;
-        }
-        else
-        {
+        } else {
             regValue &= ~PHY_BCTL_DUPLEX_MASK;
         }
         result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG, regValue);
@@ -360,8 +306,7 @@ status_t PHY_RTL8211F_SetLinkSpeedDuplex(phy_handle_t *handle, phy_speed_t speed
     return result;
 }
 
-status_t PHY_RTL8211F_EnableLoopback(phy_handle_t *handle, phy_loop_t mode, phy_speed_t speed, bool enable)
-{
+status_t PHY_RTL8211F_EnableLoopback(phy_handle_t *handle, phy_loop_t mode, phy_speed_t speed, bool enable) {
     /* This PHY only supports local loopback. */
     assert(mode == kPHY_LocalLoop);
 
@@ -369,54 +314,42 @@ status_t PHY_RTL8211F_EnableLoopback(phy_handle_t *handle, phy_loop_t mode, phy_
     uint32_t regValue;
 
     /* Set the loop mode. */
-    if (enable)
-    {
-        if (speed == kPHY_Speed1000M)
-        {
+    if (enable) {
+        if (speed == kPHY_Speed1000M) {
             regValue = PHY_BCTL_SPEED1_MASK | PHY_BCTL_DUPLEX_MASK | PHY_BCTL_LOOP_MASK;
-        }
-        else if (speed == kPHY_Speed100M)
-        {
+        } else if (speed == kPHY_Speed100M) {
             regValue = PHY_BCTL_SPEED0_MASK | PHY_BCTL_DUPLEX_MASK | PHY_BCTL_LOOP_MASK;
-        }
-        else
-        {
+        } else {
             regValue = PHY_BCTL_DUPLEX_MASK | PHY_BCTL_LOOP_MASK;
         }
         result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG, regValue);
-    }
-    else
-    {
+    } else {
         /* First read the current status in control register. */
         result = MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG, &regValue);
-        if (result == kStatus_Success)
-        {
+        if (result == kStatus_Success) {
             regValue &= ~PHY_BCTL_LOOP_MASK;
             result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_BASICCONTROL_REG,
-                                (regValue | PHY_BCTL_RESTART_AUTONEG_MASK));
+                (regValue | PHY_BCTL_RESTART_AUTONEG_MASK));
         }
     }
     return result;
 }
 
 static status_t PHY_RTL8211F_MMD_SetDevice(phy_handle_t *handle,
-                                           uint8_t device,
-                                           uint16_t addr,
-                                           phy_mmd_access_mode_t mode)
-{
+    uint8_t device,
+    uint16_t addr,
+    phy_mmd_access_mode_t mode) {
     status_t result = kStatus_Success;
 
     /* Set Function mode of address access(b00) and device address. */
     result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_MMD_ACCESS_CONTROL_REG, device);
-    if (result != kStatus_Success)
-    {
+    if (result != kStatus_Success) {
         return result;
     }
 
     /* Set register address. */
     result = MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_MMD_ACCESS_DATA_REG, addr);
-    if (result != kStatus_Success)
-    {
+    if (result != kStatus_Success) {
         return result;
     }
 
@@ -426,34 +359,28 @@ static status_t PHY_RTL8211F_MMD_SetDevice(phy_handle_t *handle,
     return result;
 }
 
-static inline status_t PHY_RTL8211F_MMD_ReadData(phy_handle_t *handle, uint32_t *data)
-{
+static inline status_t PHY_RTL8211F_MMD_ReadData(phy_handle_t *handle, uint32_t *data) {
     return MDIO_Read(handle->mdioHandle, handle->phyAddr, PHY_MMD_ACCESS_DATA_REG, data);
 }
 
-static inline status_t PHY_RTL8211F_MMD_WriteData(phy_handle_t *handle, uint32_t data)
-{
+static inline status_t PHY_RTL8211F_MMD_WriteData(phy_handle_t *handle, uint32_t data) {
     return MDIO_Write(handle->mdioHandle, handle->phyAddr, PHY_MMD_ACCESS_DATA_REG, data);
 }
 
-static status_t PHY_RTL8211F_MMD_Read(phy_handle_t *handle, uint8_t device, uint16_t addr, uint32_t *data)
-{
+static status_t PHY_RTL8211F_MMD_Read(phy_handle_t *handle, uint8_t device, uint16_t addr, uint32_t *data) {
     status_t result = kStatus_Success;
-    result          = PHY_RTL8211F_MMD_SetDevice(handle, device, addr, kPHY_MMDAccessNoPostIncrement);
-    if (result == kStatus_Success)
-    {
+    result = PHY_RTL8211F_MMD_SetDevice(handle, device, addr, kPHY_MMDAccessNoPostIncrement);
+    if (result == kStatus_Success) {
         result = PHY_RTL8211F_MMD_ReadData(handle, data);
     }
     return result;
 }
 
-static status_t PHY_RTL8211F_MMD_Write(phy_handle_t *handle, uint8_t device, uint16_t addr, uint32_t data)
-{
+static status_t PHY_RTL8211F_MMD_Write(phy_handle_t *handle, uint8_t device, uint16_t addr, uint32_t data) {
     status_t result = kStatus_Success;
 
     result = PHY_RTL8211F_MMD_SetDevice(handle, device, addr, kPHY_MMDAccessNoPostIncrement);
-    if (result == kStatus_Success)
-    {
+    if (result == kStatus_Success) {
         result = PHY_RTL8211F_MMD_WriteData(handle, data);
     }
     return result;
