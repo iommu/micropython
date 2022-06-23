@@ -150,6 +150,7 @@ SRC_C += \
 	dma_manager.c \
 	drivers/bus/softspi.c \
 	drivers/dht/dht.c \
+	flash.c \
 	eth.c \
 	extmod/modnetwork.c \
 	extmod/modonewire.c \
