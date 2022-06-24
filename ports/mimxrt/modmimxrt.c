@@ -34,6 +34,9 @@ STATIC const mp_rom_map_elem_t mimxrt_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_Flash),               MP_ROM_PTR(&mimxrt_flash_type) },
 
     { MP_ROM_QSTR(MP_QSTR_dht_readinto), MP_ROM_PTR(&dht_readinto_obj) },
+    #if MICROPY_HW_USB_MSC
+    { MP_ROM_QSTR(MP_QSTR_MSC),                 MP_ROM_INT(1) },
+    #endif
 };
 STATIC MP_DEFINE_CONST_DICT(mimxrt_module_globals, mimxrt_module_globals_table);
 
