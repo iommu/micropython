@@ -180,6 +180,7 @@ SRC_C += \
 	modutime.c \
 	mphalport.c \
 	mpnetworkport.c \
+	msc_disk.c \
 	network_lan.c \
 	pendsv.c \
 	pin.c \
