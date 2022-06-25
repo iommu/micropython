@@ -196,6 +196,7 @@ SRC_C += \
 	shared/runtime/mpirq.c \
 	shared/runtime/pyexec.c \
 	shared/runtime/stdout_helpers.c \
+	shared/runtime/tinyusb_helpers.c \
 	shared/runtime/sys_stdio_mphal.c \
 	shared/timeutils/timeutils.c \
 	systick.c \
