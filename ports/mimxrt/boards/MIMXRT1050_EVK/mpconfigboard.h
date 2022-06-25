@@ -1,6 +1,9 @@
 #define MICROPY_HW_BOARD_NAME "i.MX RT1050 EVKB-A1"
 #define MICROPY_HW_MCU_NAME   "MIMXRT1052DVL6B"
 
+// Disable MSC for the devive with Hyperflash
+#define MICROPY_HW_USB_MSC    (0)
+
 // MIMXRT1050_EVKB has 1 user LED
 #define MICROPY_HW_LED1_PIN (pin_GPIO_AD_B0_09)
 #define MICROPY_HW_LED_ON(pin) (mp_hal_pin_low(pin))
