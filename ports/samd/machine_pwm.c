@@ -51,7 +51,7 @@ typedef struct _machine_pwm_obj_t {
 #define PWM_NOT_INIT    (0)
 #define PWM_INIT_CLK    (1)
 #define PWM_ENABLE_TCC  (2)
-#define PWM_MASTER_CLK  (get_apb_freq())
+#define PWM_MASTER_CLK  (get_peripheral_freq())
 #define PWM_FULL_SCALE  (65536)
 
 static Tcc *tcc_instance[] = TCC_INSTS;

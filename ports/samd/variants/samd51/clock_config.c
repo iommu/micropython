@@ -33,7 +33,7 @@
 #include "samd_soc.h"
 
 static uint32_t cpu_freq = CPU_FREQ;
-static uint32_t apb_freq = APB_FREQ;
+static uint32_t peripheral_freq = DFLL48M_FREQ;
 static uint32_t dfll48m_calibration;
 
 int sercom_gclk_id[] = {
@@ -49,8 +49,8 @@ uint32_t get_cpu_freq(void) {
     return cpu_freq;
 }
 
-uint32_t get_apb_freq(void) {
-    return apb_freq;
+uint32_t get_peripheral_freq(void) {
+    return peripheral_freq;
 }
 
 void set_cpu_freq(uint32_t cpu_freq_arg) {
@@ -64,10 +64,10 @@ void set_cpu_freq(uint32_t cpu_freq_arg) {
     OSCCTRL->Dpll[0].DPLLCTRLA.bit.ENABLE = 0;
     while (OSCCTRL->Dpll[0].DPLLSYNCBUSY.bit.ENABLE == 1) {
     }
-    if (cpu_freq_arg > APB_FREQ) {
+    if (cpu_freq_arg > DFLL48M_FREQ) {
 
         cpu_freq = cpu_freq_arg;
-        apb_freq = APB_FREQ;
+        peripheral_freq = DFLL48M_FREQ;
         // Now configure the registers
         OSCCTRL->Dpll[0].DPLLCTRLB.reg = OSCCTRL_DPLLCTRLB_DIV(1) | OSCCTRL_DPLLCTRLB_LBYPASS |
             OSCCTRL_DPLLCTRLB_REFCLK(0) | OSCCTRL_DPLLCTRLB_WUF | OSCCTRL_DPLLCTRLB_FILTER(0x01);
@@ -90,7 +90,7 @@ void set_cpu_freq(uint32_t cpu_freq_arg) {
         while (GCLK->SYNCBUSY.bit.GENCTRL2) {
         }
     } else {
-        int div = APB_FREQ / cpu_freq_arg;
+        int div = DFLL48M_FREQ / cpu_freq_arg;
         // Setup GCLK1 for the low freq
         GCLK->GENCTRL[2].reg = GCLK_GENCTRL_DIV(div) | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL;
         while (GCLK->SYNCBUSY.bit.GENCTRL2) {
@@ -98,8 +98,8 @@ void set_cpu_freq(uint32_t cpu_freq_arg) {
         GCLK->GENCTRL[0].reg = GCLK_GENCTRL_DIV(div) | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL;
         while (GCLK->SYNCBUSY.bit.GENCTRL0) {
         }
-        apb_freq = APB_FREQ / div;
-        cpu_freq = APB_FREQ / div;
+        peripheral_freq = DFLL48M_FREQ / div;
+        cpu_freq = DFLL48M_FREQ / div;
     }
     if (cpu_freq >= 8000000) {
         // Setup GCLK5 for DFLL48M output (48 MHz)
@@ -211,7 +211,7 @@ void init_clocks(uint32_t cpu_freq) {
     while (GCLK->PCHCTRL[0].bit.CHEN == 0) {
     }
     // Step 2: Set the multiplication values. The offset of 16384 to the freq is for rounding.
-    OSCCTRL->DFLLMUL.reg = OSCCTRL_DFLLMUL_MUL((APB_FREQ + DPLLx_REF_FREQ / 2) / DPLLx_REF_FREQ) |
+    OSCCTRL->DFLLMUL.reg = OSCCTRL_DFLLMUL_MUL((DFLL48M_FREQ + DPLLx_REF_FREQ / 2) / DPLLx_REF_FREQ) |
         OSCCTRL_DFLLMUL_FSTEP(1) | OSCCTRL_DFLLMUL_CSTEP(1);
     while (OSCCTRL->DFLLSYNC.bit.DFLLMUL == 1) {
     }
@@ -230,7 +230,7 @@ void init_clocks(uint32_t cpu_freq) {
     #else // MICROPY_HW_XOSC32K
 
     // Derive GCLK1 from DFLL48M at DPLL0_REF_FREQ as defined in mpconfigboard.h (e.g. 32768 Hz)
-    GCLK->GENCTRL[1].reg = ((APB_FREQ + DPLLx_REF_FREQ / 2) / DPLLx_REF_FREQ) << GCLK_GENCTRL_DIV_Pos
+    GCLK->GENCTRL[1].reg = ((DFLL48M_FREQ + DPLLx_REF_FREQ / 2) / DPLLx_REF_FREQ) << GCLK_GENCTRL_DIV_Pos
         | GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL;
     while (GCLK->SYNCBUSY.bit.GENCTRL1) {
     }
@@ -272,7 +272,7 @@ void init_clocks(uint32_t cpu_freq) {
     }
 
     // Setup GCLK3 for 8MHz, Used for TC0/1 counter
-    GCLK->GENCTRL[3].reg = GCLK_GENCTRL_DIV(apb_freq / 8000000) | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL;
+    GCLK->GENCTRL[3].reg = GCLK_GENCTRL_DIV(peripheral_freq / 8000000) | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL;
     while (GCLK->SYNCBUSY.bit.GENCTRL3) {
     }
 }

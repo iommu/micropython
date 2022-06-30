@@ -33,7 +33,7 @@
 #include "samd_soc.h"
 
 static uint32_t cpu_freq = CPU_FREQ;
-static uint32_t apb_freq = APB_FREQ;
+static uint32_t peripheral_freq = DFLL48M_FREQ;
 static uint32_t dfll48m_calibration;
 
 int sercom_gclk_id[] = {
@@ -46,14 +46,14 @@ uint32_t get_cpu_freq(void) {
     return cpu_freq;
 }
 
-uint32_t get_apb_freq(void) {
-    return apb_freq;
+uint32_t get_peripheral_freq(void) {
+    return peripheral_freq;
 }
 
 void set_cpu_freq(uint32_t cpu_freq_arg) {
 
-    int div = APB_FREQ / cpu_freq_arg;
-    apb_freq = cpu_freq = APB_FREQ / div;
+    int div = DFLL48M_FREQ / cpu_freq_arg;
+    peripheral_freq = cpu_freq = DFLL48M_FREQ / div;
 
     // Enable GCLK output: 48M on both CCLK0 and GCLK2
     GCLK->GENDIV.reg = GCLK_GENDIV_ID(0) | GCLK_GENDIV_DIV(div);
