@@ -18,6 +18,9 @@ unsigned long trng_random_u32(void);
 
 // Due to a limitation in the TC counter for us, the ticks period is 2**29
 #define MICROPY_PY_UTIME_TICKS_PERIOD   (0x20000000)
+
+#define MICOPY_PY_DHT                   (1)
+
 // MicroPython configs
 // samd_flash.c flash parameters
 // Build a 128k Flash storage at top. 512k-128k=384k=0x60000
