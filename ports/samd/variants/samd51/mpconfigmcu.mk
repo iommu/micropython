@@ -1,9 +1,11 @@
 
 MICROPY_VFS_LFS2 ?= 1
+MICROPY_VFS_FAT ?= 1
 
 SRC_S += shared/runtime/gchelper_m3.s
 
 SRC_C += \
+	fatfs_port.c \
 	extmod/modonewire.c \
 	drivers/dht/dht.c \
 
