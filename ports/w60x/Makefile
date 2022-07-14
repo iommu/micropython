@@ -252,7 +252,7 @@ OBJ_MP += $(addprefix $(BUILD)/, $(MPY_SRC_C:.c=.o))
 OBJ_MP += $(addprefix $(BUILD)/, $(EXTMOD_SRC_C:.c=.o))
 OBJ_MP += $(addprefix $(BUILD)/, $(LIB_SRC_C:.c=.o))
 OBJ_MP += $(addprefix $(BUILD)/, $(DRIVERS_SRC_C:.c=.o))
-OBJ_mp += $(addprefix $(BUILD)/, $(SRC_MOD:.c=.o))
+OBJ_MP += $(addprefix $(BUILD)/, $(SRC_MOD:.c=.o))
 OBJ_MP += $(addprefix $(BUILD)/, $(SRC_O:.s=.o))
 
 ifeq ($(MICROPY_SSL_MBEDTLS),1)
