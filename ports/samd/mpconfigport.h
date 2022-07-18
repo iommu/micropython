@@ -103,14 +103,6 @@
 #define mp_type_fileio mp_type_vfs_lfs1_fileio
 #define mp_type_textio mp_type_vfs_lfs1_textio
 
-#define MICROPY_PORT_ROOT_POINTERS \
-    const char *readline_hist[8]; \
-    void *machine_pin_irq_objects[16]; \
-    void *samd_uart_rx_buffer[SERCOM_INST_NUM]; \
-    void *samd_uart_tx_buffer[SERCOM_INST_NUM];
-
-#define MP_STATE_PORT MP_STATE_VM
-
 // Miscellaneous settings
 __attribute__((always_inline)) static inline void enable_irq(uint32_t state) {
     __set_PRIMASK(state);
