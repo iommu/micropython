@@ -517,3 +517,6 @@ const mp_obj_type_t machine_uart_type = {
     .protocol = &uart_stream_p,
     .locals_dict = (mp_obj_dict_t *)&machine_uart_locals_dict,
 };
+
+MP_REGISTER_ROOT_POINTER(void *samd_uart_rx_buffer[SERCOM_INST_NUM]);
+MP_REGISTER_ROOT_POINTER(void *samd_uart_tx_buffer[SERCOM_INST_NUM]);
