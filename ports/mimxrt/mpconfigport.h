@@ -249,15 +249,6 @@ extern const struct _mp_obj_type_t network_lan_type;
 #define MICROPY_BOARD_ROOT_POINTERS
 #endif
 
-#define MICROPY_PORT_ROOT_POINTERS \
-    const char *readline_hist[32]; \
-    struct _machine_timer_obj_t *timer_table[MICROPY_HW_PIT_NUM_CHANNELS]; \
-    void *machine_pin_irq_objects[MICROPY_HW_NUM_PIN_IRQS]; \
-    /* list of registered NICs */ \
-    mp_obj_list_t mod_network_nic_list; \
-    /* root pointers defined by a board */ \
-    MICROPY_BOARD_ROOT_POINTERS \
-
 #define MP_STATE_PORT MP_STATE_VM
 
 // Miscellaneous settings
