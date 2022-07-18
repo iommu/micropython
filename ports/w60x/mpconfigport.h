@@ -188,10 +188,6 @@
 
 #define MP_STATE_PORT MP_STATE_VM
 
-#define MICROPY_PORT_ROOT_POINTERS \
-    const char *readline_hist[8]; \
-    mp_obj_t machine_pin_irq_handler[48]; \
-
 // type definitions for the specific machine
 
 #define BYTES_PER_WORD (4)
