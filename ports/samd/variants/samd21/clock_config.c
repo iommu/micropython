@@ -52,29 +52,58 @@ uint32_t get_peripheral_freq(void) {
 
 void set_cpu_freq(uint32_t cpu_freq_arg) {
 
-    int div = DFLL48M_FREQ / cpu_freq_arg;
-    peripheral_freq = cpu_freq = DFLL48M_FREQ / div;
+    if (cpu_freq_arg <= DFLL48M_FREQ) {
+        int div = DFLL48M_FREQ / cpu_freq_arg;
+        cpu_freq = DFLL48M_FREQ / div;
+        peripheral_freq = cpu_freq;
 
-    // Enable GCLK output: 48M on both CCLK0 and GCLK2
-    GCLK->GENDIV.reg = GCLK_GENDIV_ID(0) | GCLK_GENDIV_DIV(div);
-    GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(0);
-    while (GCLK->STATUS.bit.SYNCBUSY) {
-    }
-    GCLK->GENDIV.reg = GCLK_GENDIV_ID(2) | GCLK_GENDIV_DIV(div);
-    GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(2);
-    while (GCLK->STATUS.bit.SYNCBUSY) {
-    }
-    if (cpu_freq >= 8000000) {
-        // Enable GCLK output: 48MHz on GCLK5 for USB
-        GCLK->GENDIV.reg = GCLK_GENDIV_ID(5) | GCLK_GENDIV_DIV(1);
-        GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(5);
+        // Enable GCLK output: 1-48M on both CCLK0 and GCLK2
+        GCLK->GENDIV.reg = GCLK_GENDIV_ID(0) | GCLK_GENDIV_DIV(div);
+        GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(0);
         while (GCLK->STATUS.bit.SYNCBUSY) {
+        }
+        GCLK->GENDIV.reg = GCLK_GENDIV_ID(2) | GCLK_GENDIV_DIV(div);
+        GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(2);
+        while (GCLK->STATUS.bit.SYNCBUSY) {
+        }
+        if (cpu_freq >= 8000000) {
+            // Enable GCLK output: 48MHz on GCLK5 for USB
+            GCLK->GENDIV.reg = GCLK_GENDIV_ID(5) | GCLK_GENDIV_DIV(1);
+            GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(5);
+            while (GCLK->STATUS.bit.SYNCBUSY) {
+            }
+        } else {
+            // Disable GCLK output on GCLK5 for USB, since USB is not reliable below 8 Mhz.
+            GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(5);
+            while (GCLK->STATUS.bit.SYNCBUSY) {
+            }
         }
     } else {
-        // Disable GCLK output on GCLK5 for USB, since USB is not reliable below 8 Mhz.
-        GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(5);
+        peripheral_freq = DFLL48M_FREQ;
+        cpu_freq = cpu_freq_arg;
+        // Enable GCLK output: 48M on both CCLK0 and GCLK2
+        GCLK->GENDIV.reg = GCLK_GENDIV_ID(0) | GCLK_GENDIV_DIV(1);
+        GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(0);
         while (GCLK->STATUS.bit.SYNCBUSY) {
         }
+        GCLK->GENDIV.reg = GCLK_GENDIV_ID(2) | GCLK_GENDIV_DIV(1);
+        GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(2);
+        while (GCLK->STATUS.bit.SYNCBUSY) {
+        }
+        // Set up the PLL in integer mode
+        uint32_t ldr = cpu_freq / DPLLx_REF_FREQ - 1;
+        SYSCTRL->DPLLRATIO.reg = SYSCTRL_DPLLRATIO_LDR(ldr);
+        SYSCTRL->DPLLCTRLB.reg = SYSCTRL_DPLLCTRLB_LBYPASS | SYSCTRL_DPLLCTRLB_REFCLK_GCLK |
+            SYSCTRL_DPLLCTRLB_WUF;
+        SYSCTRL->DPLLCTRLA.reg = SYSCTRL_DPLLCTRLA_ENABLE;
+        while (SYSCTRL->DPLLSTATUS.bit.LOCK == 0) {
+        }
+        // Enable GCLK output: DPLL on CCLK0
+        GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DPLL96M | GCLK_GENCTRL_ID(0);
+        while (GCLK->STATUS.bit.SYNCBUSY) {
+        }
+        // Set 2 waitstates for higher frequencies
+        NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_MANW | NVMCTRL_CTRLB_RWS(cpu_freq > 55000000 ? 2 : 1);
     }
 }
 
@@ -120,10 +149,14 @@ void init_clocks(uint32_t cpu_freq) {
     // Connect the GCLK1 to the XOSC32KULP
     GCLK->GENDIV.reg = GCLK_GENDIV_ID(1) | GCLK_GENDIV_DIV(1);
     GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_OSCULP32K | GCLK_GENCTRL_ID(1);
+    // Connect GCLK1 to the DPLL input
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_FDPLL | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
     #else
     // Connect the GCLK1 to OSC32K via GCLK1 to the DFLL input and for further use.
     GCLK->GENDIV.reg = GCLK_GENDIV_ID(1) | GCLK_GENDIV_DIV(1);
     GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_XOSC32K | GCLK_GENCTRL_ID(1);
+    // Connect GCLK1 to the DPLL input
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_FDPLL | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
     #endif
 
     while (GCLK->STATUS.bit.SYNCBUSY) {
@@ -202,6 +235,8 @@ void init_clocks(uint32_t cpu_freq) {
     GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_DFLL48M | GCLK_GENCTRL_ID(1);
     while (GCLK->STATUS.bit.SYNCBUSY) {
     }
+    // Connect GCLK1 to the DPLL input
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_FDPLL | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
 
     #endif // MICROPY_HW_XOSC32K
 
